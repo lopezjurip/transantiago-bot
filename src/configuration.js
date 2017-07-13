@@ -43,7 +43,7 @@ module.exports = function configuration(subtree = null) {
   });
 
   // Throw error if missing
-  config.required(["telegram:token"]);
+  config.required(["URL", "TELEGRAM:TOKEN"]);
 
   // Return a sub-tree of the config object is needed
   return subtree ? config.sub(subtree) : config;
