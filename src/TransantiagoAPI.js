@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-class Transantiago {
+class TransantiagoAPI {
   constructor() {
     this.client = axios.create({
       baseURL: "http://www.transantiago.cl/",
@@ -32,4 +32,4 @@ class Transantiago {
   }
 }
 
-module.exports = Transantiago;
+module.exports = TransantiagoAPI;

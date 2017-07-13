@@ -10,7 +10,7 @@ const fs = require("mz/fs");
 const path = require("path");
 
 const configuration = require("./configuration");
-const Transantiago = require("./Transantiago");
+const Transantiago = require("./TransantiagoAPI");
 const info = require("../package.json");
 
 const config = configuration();
