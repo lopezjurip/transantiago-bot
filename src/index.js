@@ -4,6 +4,7 @@ const bb = require("bot-brother");
 const dedent = require("dedent");
 const numeral = require("numeral");
 const _ = require("lodash");
+const moment = require("moment");
 const truncate = require("unicode-byte-truncate");
 const fs = require("mz/fs");
 const path = require("path");
@@ -43,6 +44,13 @@ console.log(dedent`
   - PORT: ${config.get("PORT")}
   - TOKEN: ${_.fill([...token], "*", 0, -5).join("")}
 `);
+
+bot.command(/.*/).use("before", async ctx => {
+  const { name, args } = ctx.command;
+  const date = moment().format("YYYY/MM/DD HH:SS");
+  // eslint-disable-next-line
+  console.log(date, `@${ctx.meta.user.username} (${ctx.meta.user.language_code}):`, `/${name} ${args}`);
+});
 
 /**
  * /start
