@@ -1,12 +1,12 @@
 {
-  "host": "localhost",
-  "port": 4000,
-  "url": "https://something.ngrok.io",
-  "redis": {
-    "host": "127.0.0.1",
-    "port": "6379"
+  "HOST": "localhost",
+  "PORT": 4000,
+  "URL": "https://something.ngrok.io",
+  "REDIS": {
+    "HOST": "127.0.0.1",
+    "PORT": "6379"
   },
-  "telegram": {
-    "token": null
+  "TELEGRAM": {
+    "TOKEN": null
   }
 }

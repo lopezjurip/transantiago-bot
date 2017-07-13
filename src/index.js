@@ -13,11 +13,11 @@ const info = require("../package.json");
 
 const config = configuration();
 
-const url = config.get("url");
-const token = config.get("telegram:token");
+const url = config.get("URL");
+const token = config.get("TELEGRAM:TOKEN");
 const manager = bb.sessionManager.redis({
-  port: config.get("redis:port"),
-  host: config.get("redis:host"),
+  port: config.get("REDIS:PORT"),
+  host: config.get("REDIS:HOST"),
 });
 
 const transantiago = new Transantiago();
@@ -27,8 +27,8 @@ const bot = bb({
   sessionManager: manager,
   webHook: {
     url: `${url}/bot${token}`,
-    port: config.get("port"),
-    host: config.get("host"),
+    port: config.get("PORT"),
+    host: config.get("HOST"),
   },
 });
 

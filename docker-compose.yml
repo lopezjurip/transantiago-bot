@@ -14,7 +14,7 @@ services:
       - redis
     environment:
       - NODE_ENV=production
-      - redis__host=redis
-      - redis__port=6379
-      - url=https://transantiago-bot.lopezjuri.com
-      - telegram__token
+      - REDIS__HOST=redis
+      - REDIS__PORT=6379
+      - URL
+      - TELEGRAM__TOKEN
