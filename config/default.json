@@ -1,5 +1,4 @@
 {
-  "HOST": "localhost",
   "PORT": 4000,
   "URL": "https://something.ngrok.io",
   "REDIS": {

@@ -28,9 +28,16 @@ const bot = bb({
   webHook: {
     url: `${url}/bot${token}`,
     port: config.get("PORT"),
-    host: config.get("HOST"),
   },
 });
+
+// eslint-disable-next-line
+console.log(dedent`
+  Bot Started with:
+  - URL: ${url}
+  - PORT: ${config.get("PORT")}
+  - TOKEN: ${_.fill([...token], "*", 0, -5).join("")}
+`);
 
 bot.command("start").invoke(async ctx => {
   const { user } = ctx.meta;
