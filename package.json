@@ -4,19 +4,41 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
     "lint": "eslint .",
     "test": "jest"
   },
   "engines": {
     "node": ">=8.0.0"
   },
-  "author": "Patricio López <lopezjuripatricio@gmail.com>",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/mrpatiwi/transantiago-bot.git"
+  },
+  "author": {
+    "email": "patricio@lopezjuri.com",
+    "name": "Patricio López Juri",
+    "url": "https://lopezjuri.com",
+    "telegram": "mrpatiwi"
+  },
   "license": "MIT",
   "devDependencies": {
     "eslint": "^4.0.0",
     "eslint-config-prettier": "^2.1.1",
     "eslint-plugin-prettier": "^2.1.1",
     "jest": "^20.0.4",
+    "nodemon": "^1.11.0",
     "prettier": "^1.4.4"
+  },
+  "dependencies": {
+    "axios": "^0.16.2",
+    "bot-brother": "^2.1.5",
+    "dedent": "^0.7.0",
+    "deline": "^1.0.4",
+    "dotenv": "^4.0.0",
+    "lodash": "^4.17.4",
+    "mz": "^2.6.0",
+    "nconf": "^0.8.4",
+    "numeral": "^2.0.6"
   }
 }
