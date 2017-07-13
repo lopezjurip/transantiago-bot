@@ -76,7 +76,7 @@ bot.command("about").invoke(async ctx => {
     *Licencia:* ${info.license}
     *Repositorio:* ${info.repository.url}
 
-    Este bot es _no-oficial_ y no guarda relación con el Transantaigo ni el Ministerio de Transportes.
+    Este bot es _no-oficial_ y no guarda relación con el Transantiago ni el Ministerio de Transportes.
 
     :bust_in_silhouette: *Autor:*
      • ${info.author.name}
@@ -86,7 +86,7 @@ bot.command("about").invoke(async ctx => {
 
     :pray: *Ayúdame a mantener esto con alguna donación:*
     - PayPal ${info.author.paypal}
-    - Bitcoins: \`${info.author.btc}\`
+    - Bitcoin: \`${info.author.btc}\`
     - Ether: \`${info.author.eth}\`
   `;
   await ctx.sendMessage(message, { parse_mode: "Markdown" });
@@ -162,7 +162,9 @@ bot
       return ctx.repeat();
     }
 
+    ctx.sendChatAction("find_location");
     const response = await transantiago.getStops(location);
+
     const stops = _(response).filter("cod").sortBy("cod");
 
     const list = stops
@@ -204,6 +206,8 @@ bot
   .command(/^[a-zA-Z]{2}[0-9]+/) // Match first 2 alphabetic digits and the rest must be numbers.
   .invoke(async ctx => {
     const id = ctx.command.name.toUpperCase().trim();
+
+    ctx.sendChatAction("find_location");
     const response = await transantiago.getStop(id);
 
     if (!response) {
@@ -258,6 +262,8 @@ bot
   .command(/^[a-zA-Z0-9]{1}[0-9]+/) // TODO: refine this
   .invoke(async ctx => {
     const id = ctx.command.name.toUpperCase().trim();
+
+    ctx.sendChatAction("find_location");
     const response = await transantiago.getTours(id);
 
     if (!response) {
