@@ -47,7 +47,7 @@ console.log(dedent`
 
 bot.command(/.*/).use("before", async ctx => {
   const { name, args } = ctx.command;
-  const date = moment().format("YYYY/MM/DD HH:SS");
+  const date = moment().format("YYYY/MM/DD HH:mm:ss");
   // eslint-disable-next-line
   console.log(date, `@${ctx.meta.user.username} (${ctx.meta.user.language_code}):`, `/${name} ${args}`);
 });
@@ -129,7 +129,7 @@ bot.command("cancelar").invoke(async ctx => {
 bot
   .command("paradero")
   .invoke(async ctx => {
-    if (ctx.command.args >= 1) {
+    if (ctx.command.args.length >= 1) {
       return await ctx.go(ctx.command.args[0]);
     } else {
       return await ctx.sendMessage(dedent`
@@ -155,7 +155,7 @@ bot
 bot
   .command("recorrido")
   .invoke(async ctx => {
-    if (ctx.command.args >= 1) {
+    if (ctx.command.args.length >= 1) {
       return await ctx.go(ctx.command.args[0]);
     } else {
       const message = dedent`
