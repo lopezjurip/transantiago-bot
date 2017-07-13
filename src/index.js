@@ -86,8 +86,8 @@ bot.command("about").invoke(async ctx => {
 
     :pray: *Ayúdame a mantener esto con alguna donación:*
     - PayPal ${info.author.paypal}
-    - Bitcoins: ${info.author.btc}
-    - Ether: ${info.author.eth}
+    - Bitcoins: \`${info.author.btc}\`
+    - Ether: \`${info.author.eth}\`
   `;
   await ctx.sendMessage(message, { parse_mode: "Markdown" });
 });
@@ -224,7 +224,7 @@ bot
             const distance = numeral(service[`distanciabus${n}`]).divide(1000);
             const time = service[`horaprediccionbus${n}`];
             return dedent`
-              ↳ _${plate} (${distance.format("0.[00]")} km)_:
+              ↳ \`${plate}\` _(${distance.format("0.[00]")} km)_:
               *${time}*
             `;
           })
