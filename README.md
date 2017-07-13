@@ -2,7 +2,7 @@
 
 [![dependencies][dependencies-image]][dependencies-url] [![dev-dependencies][dev-dependencies-image]][dev-dependencies-url] [![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 
-Telegram bot built with [`SerjoPepper/bot-brother`](https://github.com/SerjoPepper/bot-brother) to give you information about the Transantiago.
+Telegram bot built with [`SerjoPepper/bot-brother`](https://github.com/SerjoPepper/bot-brother) to give you information about the Transantiago. Thanks to @radutzan for this [gist](https://gist.github.com/radutzan/a29aa8fb30b1b866bd0bc44d65a3676e).
 
 > [Start conversation here](https://t.me/transantiago_bot)
 
@@ -43,7 +43,7 @@ yarn start
 ## Production
 
 **Requirements:**
-* Docker 
+* Docker
 * Docker-Compose
 
 Create the same `.env` file but with the production values. Then:
