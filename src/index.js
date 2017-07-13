@@ -4,14 +4,19 @@ const bb = require("bot-brother");
 const dedent = require("dedent");
 const numeral = require("numeral");
 const _ = require("lodash");
+const truncate = require("unicode-byte-truncate");
 const fs = require("mz/fs");
 const path = require("path");
 
 const configuration = require("./configuration");
-const Transantiago = require("./transantiago");
+const Transantiago = require("./Transantiago");
 const info = require("../package.json");
 
 const config = configuration();
+
+// TODO: Temporal fix. Add pagination.
+// See: https://core.telegram.org/method/messages.sendMessage#return-errors
+const MAX_BYTES = 4096;
 
 const url = config.get("URL");
 const token = config.get("TELEGRAM:TOKEN");
@@ -39,18 +44,15 @@ console.log(dedent`
   - TOKEN: ${_.fill([...token], "*", 0, -5).join("")}
 `);
 
+/**
+ * /start
+ * Init bot showing this first message.
+ */
 bot.command("start").invoke(async ctx => {
   const { user } = ctx.meta;
 
-  const txt = await fs.readFile(
-    path.join(__dirname, "..", "docs", "commands.txt"),
-    "utf8"
-  );
-  const commands = txt
-    .split("\n")
-    .filter(Boolean)
-    .map(line => `/${line}`)
-    .join("\n");
+  const txt = await fs.readFile(path.join(__dirname, "..", "docs", "commands.txt"), "utf8");
+  const commands = txt.split("\n").filter(Boolean).map(line => `/${line}`).join("\n");
 
   const message = dedent`
     *¡Transantiago Bot te saluda humano ${user.first_name}!* :oncoming_bus: :wave:
@@ -66,10 +68,18 @@ bot.command("start").invoke(async ctx => {
   await ctx.sendMessage(message, { parse_mode: "Markdown" });
 });
 
+/**
+ * /help
+ * Help message, in this case we just redirect to /start
+ */
 bot.command("help").invoke(async ctx => {
   await ctx.go("start");
 });
 
+/**
+ * /about
+ * Show information from `package.json` like version, author and donation addresses.
+ */
 bot.command("about").invoke(async ctx => {
   const message = dedent`
     *Transantiago Bot (${info.version})*
@@ -92,65 +102,80 @@ bot.command("about").invoke(async ctx => {
   await ctx.sendMessage(message, { parse_mode: "Markdown" });
 });
 
+/**
+ * /cancelar
+ * Stop current action. FYI: calling any other /(action) stops the current state.
+ */
 bot.command("cancelar").invoke(async ctx => {
   ctx.hideKeyboard();
-  const message = dedent`
+  await ctx.sendMessage(dedent`
     OK, dejaré de hacer lo que estaba haciendo.
-    Necesitas ayuda? /help
-  `;
-  await ctx.sendMessage(message);
+    ¿Necesitas ayuda? /help
+  `);
 });
 
+/**
+ * /paradero
+ * Ask and get information about the bus stop.
+ */
 bot
   .command("paradero")
   .invoke(async ctx => {
     if (ctx.command.args >= 1) {
-      return ctx.go(ctx.command.args[0]);
+      return await ctx.go(ctx.command.args[0]);
     } else {
-      const message = dedent`
+      return await ctx.sendMessage(dedent`
         ¿Qué paradero quieres consultar?
         Por Ejemplo: /PA692.
         Para cancelar escribe /cancelar.
-      `;
-      return ctx.sendMessage(message);
+      `);
     }
   })
   .answer(async ctx => {
     const answer = ctx.answer;
     if (!answer) {
-      return ctx.repeat();
+      return await ctx.repeat();
     } else {
-      return ctx.go(answer.toUpperCase());
+      return await ctx.go(answer.toUpperCase());
     }
   });
 
+/**
+ * /recorrido
+ * Get information about a bus tour.
+ */
 bot
   .command("recorrido")
   .invoke(async ctx => {
     if (ctx.command.args >= 1) {
-      return ctx.go(ctx.command.args[0]);
+      return await ctx.go(ctx.command.args[0]);
     } else {
       const message = dedent`
         ¿Qué recorrido quieres consultar?
         Por Ejemplo: /422.
         Para cancelar escribe /cancelar.
       `;
-      return ctx.sendMessage(message);
+      return await ctx.sendMessage(message);
     }
   })
   .answer(async ctx => {
     const answer = ctx.answer;
     if (!answer) {
-      return ctx.repeat();
+      return await ctx.repeat();
     } else {
-      return ctx.go(answer.toUpperCase());
+      return await ctx.go(answer.toUpperCase());
     }
   });
 
+/**
+ * /cerca
+ * Get near close bus stops.
+ * TODO: allow typing an address.
+ */
 bot
   .command("cerca")
   .invoke(async ctx => {
-    return ctx.sendMessage(dedent`
+    return await ctx.sendMessage(dedent`
       :round_pushpin: Mandanos tu ubicación por Telegram.
       Si quieres cancelar esta acción, escribe /cancelar.
     `);
@@ -159,10 +184,10 @@ bot
     const { location } = ctx.message;
 
     if (!location) {
-      return ctx.repeat();
+      return await ctx.repeat();
     }
 
-    ctx.sendChatAction("find_location");
+    ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
     const response = await transantiago.getStops(location);
 
     const stops = _(response).filter("cod").sortBy("cod");
@@ -170,9 +195,7 @@ bot
     const list = stops
       .map(
         stop => dedent`
-        :busstop: /${stop["cod"]} _(${numeral(stop["distancia"]).format(
-          "0.[00]"
-        )} km)_
+        :busstop: /${stop["cod"]} _(${numeral(stop["distancia"]).format("0.[00]")} km)_
         ${stop["name"]}
       `
       )
@@ -194,25 +217,30 @@ bot
         },
       }))
       .chunk(3)
-      .concat([[{ Cancelar: { go: "cancelar" } }]])
+      .concat([[{ Cancelar: { go: "cancelar" } }]]) // Add a last button.
       .value();
 
     ctx.keyboard(keyboard);
-    await ctx.sendMessage(message, { parse_mode: "Markdown" });
+    return await ctx.sendMessage(message, { parse_mode: "Markdown" });
   });
 
-// Bus stops
+/**
+ * /(BUS_STOP)
+ * Example: /PA692
+ * Get buses and their plate and time.
+ * TODO: check regex.
+ */
 bot
   .command(/^[a-zA-Z]{2}[0-9]+/) // Match first 2 alphabetic digits and the rest must be numbers.
   .invoke(async ctx => {
     const id = ctx.command.name.toUpperCase().trim();
 
-    ctx.sendChatAction("find_location");
+    ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
     const response = await transantiago.getStop(id);
 
     if (!response) {
       const message = `No encontramos paraderos para ${id}.`;
-      return ctx.sendMessage(message, { parse_mode: "Markdown" });
+      return await ctx.sendMessage(message, { parse_mode: "Markdown" });
     }
 
     const services = _(response["servicios"]["item"])
@@ -234,11 +262,7 @@ bot
           })
           .join("\n");
 
-        const lines = [
-          `:bus: /${name} → ${to}`,
-          buses,
-          service["respuestaServicio"],
-        ];
+        const lines = [`:bus: /${name} → ${to}`, buses, service["respuestaServicio"]];
         return lines.filter(Boolean).join("\n");
       })
       .join("\n\n");
@@ -251,19 +275,24 @@ bot
       ${services}
     `;
 
-    await ctx.sendMessage(message, { parse_mode: "Markdown" });
+    await ctx.sendMessage(truncate(message, MAX_BYTES), { parse_mode: "Markdown" });
     if (response["x"] && response["y"]) {
       await ctx.sendLocation(response["x"], response["y"]);
     }
   });
 
-// Bus tours
+/**
+ * /(BUS)
+ * Example: /422 /D18
+ * Get bus complete tour.
+ * TODO: check regex and paginate long responses.
+ */
 bot
   .command(/^[a-zA-Z0-9]{1}[0-9]+/) // TODO: refine this
   .invoke(async ctx => {
     const id = ctx.command.name.toUpperCase().trim();
 
-    ctx.sendChatAction("find_location");
+    ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
     const response = await transantiago.getTours(id);
 
     if (!response) {
@@ -295,7 +324,7 @@ bot
         .join("\n\n");
 
       return dedent`
-        :bus: *${code} → ${to}*
+        :bus: *Recorrido* *${code} → ${to}*
 
         ${times}
 
@@ -303,8 +332,7 @@ bot
       `;
     });
 
-    const promises = tours.map(string =>
-      ctx.sendMessage(string, { parse_mode: "Markdown" })
-    );
-    await Promise.all(promises);
+    for (const message of tours) {
+      await ctx.sendMessage(truncate(message, MAX_BYTES), { parse_mode: "Markdown" });
+    }
   });
