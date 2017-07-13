@@ -14,11 +14,41 @@
   <meta name="og:site_name" property="og:site_name" content="@transantiago-bot" />
   <meta name="og:title" property="og:title" content="@transantiago-bot" />
   <meta name="og:description" property="og:description" content="Paraderos y recorridos del Transantiago." />
-  <meta name="og:image" property="og:image" content="https://s3-us-west-2.amazonaws.com/skygear-cloud-asset/appsite/f3a7a194-73d2-4943-b6c8-f0fdbc2d0635-tran.png" />
+  <meta name="og:image" property="og:image" content="//s3-us-west-2.amazonaws.com/skygear-cloud-asset/appsite/f3a7a194-73d2-4943-b6c8-f0fdbc2d0635-tran.png" />
   <meta name="og:image:type" property="og:image:type" content="image/png" />
   <meta name="og:image:width" property="og:image:width" content="1024" />
   <meta name="og:image:height" property="og:image:height" content="1024" />
   <link rel="stylesheet" href="template/main.min.css" />
+  <style>
+    /*Do not complain.*/
+
+    .telegram-title {
+      text-decoration: none !important;
+      color: white;
+    }
+    .telegram-button {
+      text-decoration: none !important;
+    }
+    .telegram-button-content {
+      min-height: 48px;
+      line-height: 48px;
+      background-color: white;
+      color: #242424;
+      text-align: center;
+      vertical-align: center;
+      width: 200px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      font-size: 17px;
+    }
+    @media only screen and (max-width: 767px) {
+      .telegram-button-content {
+        width: 100%;
+        min-height: 60px;
+        line-height: 60px;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -43,13 +73,26 @@
               </div>
               <div class="col-sm-7 col-xs-12">
                 <div class="app-content">
-                  <h2 class="app-name app-field">@transantiago-bot</h2>
+                  <h2 class="app-name app-field">
+                    <a class="telegram-title" href="https://t.me/transantiago-bot">
+                      @transantiago-bot
+                    </a>
+                  </h2>
                   <h1 class="tag-line app-field">Paraderos y recorridos del Transantiago.</h1>
                   <div class="description app-field">
                     <p>Consulta los paraderos cercanos a ti, las micros que pasan por ahí junto con sus tiempos aproximados y sus recorridos completos</p>
                   </div>
-                  <div></div>
-                  <p><strong style="color:white;padding-right:22px;">@transantiago-bot</strong><a class="footer-link" style="color:white;" href="mailto:patricio@lopezjuri.com">Contact Us</a></p>
+                  <div class="app-field">
+                    <a class="telegram-button" href="https://t.me/transantiago-bot">
+                      <div class="telegram-button-content">
+                        Abrir en Telegram
+                      </div>
+                    </a>
+                  </div>
+                  <p>
+                    <a href="https://t.me/mrpatiwi"><strong style="color:white;padding-right:22px;">@mrpatiwi</strong></a>
+                    <a class="footer-link" style="color:white;" href="mailto:patricio@lopezjuri.com">patricio@lopezjuri.com</a>
+                  </p>
                 </div>
               </div>
             </div>
