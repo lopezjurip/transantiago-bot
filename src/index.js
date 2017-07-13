@@ -48,7 +48,9 @@ bot.command("start").invoke(async ctx => {
   const message = dedent`
     *¡Transantiago Bot te saluda humano ${user.first_name}!* :oncoming_bus: :wave:
 
-    Este bot es _no-oficial_ y fue desarrollado usando información pública y en tiempo real del Transantiago. :information_desk_person: 
+    Este bot es _no-oficial_ y fue desarrollado usando información pública y en tiempo real del Transantiago. :information_desk_person:
+
+    Información y datos para realizar una donación y mantener este proyecto vivo al escribir /about.
 
     :crystal_ball: Los comandos disponibles son los siguientes:
 
@@ -63,19 +65,22 @@ bot.command("help").invoke(async ctx => {
 
 bot.command("about").invoke(async ctx => {
   const message = dedent`
-    Transantiago Bot (${info.version})
-    Licencia: ${info.license}
-    Repositorio: ${info.repository.url}
-
-    Autor:
-    • ${info.author.name}
-    • ${info.author.email}
-    • ${info.author.url}
-    • @${info.author.telegram}
+    *Transantiago Bot (${info.version})*
+    *Licencia:* ${info.license}
+    *Repositorio:* ${info.repository.url}
 
     Este bot es _no-oficial_ y no guarda relación con el Transantaigo ni el Ministerio de Transportes.
 
-    ¿Bugs? Contáctame :raised_hands:
+    :bust_in_silhouette: *Autor:*
+     • ${info.author.name}
+     • ${info.author.email}
+     • ${info.author.url}
+     • @${info.author.telegram}
+
+    :pray: *Ayúdame a mantener esto con alguna donación:*
+    - PayPal ${info.author.paypal}
+    - Bitcoins: ${info.author.btc}
+    - Ether: ${info.author.eth}
   `;
   await ctx.sendMessage(message, { parse_mode: "Markdown" });
 });
