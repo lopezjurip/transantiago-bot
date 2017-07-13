@@ -1,0 +1,20 @@
+version: '2'
+services:
+  redis:
+    image: redis:3.0.7
+
+  bot:
+    build: .
+    restart: always
+    ports:
+      - 80:4000
+      - 443:4000
+      - 4000:4000
+    depends_on:
+      - redis
+    environment:
+      - NODE_ENV=production
+      - redis__host=redis
+      - redis__port=6379
+      - url=https://transantiago-bot.lopezjuri.com
+      - telegram__token
