@@ -7,5 +7,10 @@
   },
   "TELEGRAM": {
     "TOKEN": null
+  },
+  "GOOGLE": {
+    "MAPS": {
+      "KEY": null
+    }
   }
 }

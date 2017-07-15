@@ -18,3 +18,4 @@ services:
       - REDIS__PORT=6379
       - URL
       - TELEGRAM__TOKEN
+      - GOOGLE__MAPS__KEY

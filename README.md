@@ -30,6 +30,7 @@ Make sure to set the next enviorement variables:
 ```txt
 URL=https://asdfg.ngrok.io
 TELEGRAM__TOKEN=20**********************VeQYT
+GOOGLE__MAPS__KEY=
 ```
 
 These can be set with a `.env` files (ignored by git).

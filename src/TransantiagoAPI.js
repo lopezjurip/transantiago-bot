@@ -8,7 +8,9 @@ class TransantiagoAPI {
     });
   }
 
-  async getStops({ latitude, longitude }) {
+  async getStops(coordinates = {}) {
+    const latitude = coordinates.latitude || coordinates.lat;
+    const longitude = coordinates.longitude || coordinates.lng;
     const { data } = await this.client.get(`/restservice/rest/getpuntoparada?lat=${latitude}&lon=${longitude}&bip=1`);
     return data;
   }

@@ -43,7 +43,7 @@ module.exports = function configuration(subtree = null) {
   });
 
   // Throw error if missing
-  config.required(["URL", "TELEGRAM:TOKEN"]);
+  config.required(["URL", "TELEGRAM:TOKEN", "GOOGLE:MAPS:KEY"]);
 
   // Return a sub-tree of the config object is needed
   return subtree ? config.sub(subtree) : config;

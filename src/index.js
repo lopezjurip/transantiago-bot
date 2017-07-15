@@ -11,6 +11,7 @@ const path = require("path");
 
 const configuration = require("./configuration");
 const Transantiago = require("./TransantiagoAPI");
+const GoogleMaps = require("./GoogleMapsAPI");
 const info = require("../package.json");
 
 const config = configuration();
@@ -27,6 +28,7 @@ const manager = bb.sessionManager.redis({
 });
 
 const transantiago = new Transantiago();
+const googleMaps = new GoogleMaps(config.get("GOOGLE:MAPS:KEY"));
 
 const bot = bb({
   key: token,
@@ -184,15 +186,32 @@ bot
   .command("cerca")
   .invoke(async ctx => {
     return await ctx.sendMessage(dedent`
+      Puedes:
       :round_pushpin: Mandanos tu ubicación por Telegram.
+      :pencil2: Escribir una dirección en el chat.
+
       Si quieres cancelar esta acción, escribe /cancelar.
     `);
   })
   .answer(async ctx => {
-    const { location } = ctx.message;
+    const answer = ctx.answer;
+    let { location } = ctx.message;
 
-    if (!location) {
+    if (!(answer && answer.length) && !location) {
       return await ctx.repeat();
+    } else if (answer && answer.length && !location) {
+      ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
+      const results = await googleMaps.getPlacesByAddress(answer);
+      if (!(results && results.length)) {
+        const message = `No pudimos encontrar un lugar con ese nombre.`;
+        return await ctx.sendMessage(message, { parse_mode: "Markdown" });
+      }
+
+      const result = results[0];
+      const message = `Buscando cerca de ${result["formatted_address"]}...`;
+      await ctx.sendMessage(message, { parse_mode: "Markdown" });
+
+      location = result.geometry.location;
     }
 
     ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
