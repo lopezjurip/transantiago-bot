@@ -106,7 +106,7 @@ bot.texts({
       :busstop: /<%= stop["cod"] -%> _(<%= stop["distancia"] -%> km)_
       <%= stop["name"] -%>
       <% stop["servicios"].forEach(service => { %>
-        ↳ :bus: /<%= service["cod"] %> <%= service["destino"] -%>
+        ↳ :bus: <%= service["cod"] %> <%= service["destino"] -%>
       <% }); %>
       <% }); %>
     `,
@@ -219,6 +219,17 @@ bot
   });
 
 /**
+ * /paradero
+ * Ask and get information about the bus stop.
+ */
+bot.command("paradero_posicion").invoke(async ctx => {
+  if (ctx.command.args.length >= 2) {
+    const [latitude, longitude] = ctx.command.args;
+    await ctx.sendLocation(latitude, longitude);
+  }
+});
+
+/**
  * /recorrido
  * Get information about a bus tour.
  */
@@ -265,7 +276,15 @@ bot
       current,
     });
 
-    const inline = [
+    const buttons = _(pages[current])
+      .map(stop => ({
+        [`:busstop: /${stop["cod"]}`]: { go: stop["cod"] },
+      }))
+      .chunk(2)
+      .value();
+
+    ctx.inlineKeyboard([
+      ...buttons,
       [
         current > 0 && {
           "menu.back": { callbackData: { i: current - 1 } },
@@ -274,8 +293,7 @@ bot
           "menu.next": { callbackData: { i: current + 1 } },
         },
       ].filter(Boolean),
-    ];
-    ctx.inlineKeyboard(inline);
+    ]);
 
     await ctx.updateText("near.found", {
       parse_mode: "Markdown",
@@ -326,7 +344,7 @@ async function handleNear(ctx) {
   const pages = stops.chunk(config.get("PAGINATION:SIZE")).value(); // paginate
   const current = 0;
 
-  ctx.data.stops = pages[0];
+  ctx.data.stops = pages[current];
   ctx.data.paging = {
     total: stops.size(),
     pages: pages.length,
@@ -341,7 +359,15 @@ async function handleNear(ctx) {
     paging: ctx.data.paging,
   };
 
-  const inline = [
+  const buttons = _(pages[current])
+    .map(stop => ({
+      [`:busstop: /${stop["cod"]}`]: { go: stop["cod"] },
+    }))
+    .chunk(2)
+    .value();
+
+  ctx.inlineKeyboard([
+    ...buttons,
     [
       current > 0 && {
         "menu.back": { callbackData: { i: current - 1 } },
@@ -350,18 +376,7 @@ async function handleNear(ctx) {
         "menu.next": { callbackData: { i: current + 1 } },
       },
     ].filter(Boolean),
-  ];
-  ctx.inlineKeyboard(inline);
-
-  // TODO: "copy" (HOW TO DRY IT?) this code on answer
-  // const keyboard = stops
-  //   .map(stop => ({
-  //     [stop["cod"]]: { go: stop["cod"] },
-  //   }))
-  //   .chunk(3)
-  //   .concat([[{ Cancelar: { go: "cancelar" } }]]) // Add a last button.
-  //   .value();
-  // ctx.keyboard(keyboard);
+  ]);
 
   return await ctx.sendMessage("near.found", {
     parse_mode: "Markdown",
@@ -395,19 +410,14 @@ async function handleBusStop(ctx, id = undefined) {
     )
     .value();
 
-  ctx.session.stop = {
-    position: [response["x"], response["y"]],
-  };
-
-  const inline = [
-    [
-      {
-        "Mostrar en el mapa": { callbackData: { id } },
-      },
-    ],
-  ];
   if (response["x"] && response["y"]) {
-    ctx.inlineKeyboard(inline);
+    ctx.inlineKeyboard([
+      [
+        {
+          "Mostrar en el mapa": { go: "paradero_posicion$invoke", args: [response["x"], response["y"]] },
+        },
+      ],
+    ]);
   }
 
   await ctx.sendMessage("stop.found", {
@@ -482,14 +492,7 @@ bot
  */
 bot
   .command(/^[a-zA-Z]{2}[0-9]+/) // Match first 2 alphabetic digits and the rest must be numbers.
-  .invoke(handleBusStop)
-  .callback(async ctx => {
-    const { stop: { position } } = ctx.session;
-    const { id } = ctx.callbackData;
-
-    await ctx.updateText(`Mostrando posición de /${id}:`);
-    await ctx.sendLocation(...position);
-  });
+  .invoke(handleBusStop);
 
 // eslint-disable-next-line
 console.log(dedent`
