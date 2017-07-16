@@ -25,12 +25,8 @@ class TransantiagoAPI {
 
   // See: http://www.transantiago.cl/restservice/rest/getservicios/all
   async getTours(tour) {
-    try {
-      const { data } = await this.client.get(`/restservice/rest/getrecorrido/${tour}`);
-      return data;
-    } catch (err) {
-      return null;
-    }
+    const { data } = await this.client.get(`/restservice/rest/getrecorrido/${tour}`);
+    return data;
   }
 }
 

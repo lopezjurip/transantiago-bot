@@ -146,6 +146,32 @@ bot.texts({
       Por Ejemplo: /<%= example %>.
       Para cancelar escribe /cancelar.
     `,
+    notFound: dedent`
+      No pudimos encontrar un recorrido llamado <%= name %>.
+    `,
+    found: dedent`
+      :bus: *Recorrido <%= name %>*
+      ¿En qué dirección te interesa saber?
+      <% tours.forEach(tour => { %>
+      :checkered_flag: *<%= tour["destino"] -%>* (:busstop:<%= tour["paradas"].length -%>)
+      <% tour["horarios"].forEach(schedule => { -%>
+        ↳ :calendar: <%= schedule["tipoDia"] %>
+                    <%= schedule["inicio"] %> - <%= schedule["fin"] %>
+      <% }) -%>
+      <% }) %>
+    `,
+    stops: dedent`
+      :bus: *Recorrido <%= name %>* destino *<%= to %>* (:busstop:<%= paging.total %>)
+      :book: Mostrando página <%= paging.current + 1 %> de <%= paging.pages %>:
+      <% stops.forEach(stop => { %>
+      :busstop: /<%= stop["cod"] %>
+      *<%= stop["name"] -%>*
+      _Por ahí también pasa:_
+       ↳ <% stop["servicios"].forEach(service => { -%>
+        :bus: /<%= service["cod"] -%>
+      <% }); %>
+      <% }); %>
+    `,
   },
 });
 
@@ -433,45 +459,30 @@ async function handleBusTour(ctx, id = undefined) {
   const response = await transantiago.getTours(id);
 
   if (!response) {
-    const message = `No encontramos recorridos para ${id}.`;
-    return ctx.sendMessage(message, { parse_mode: "Markdown" });
+    ctx.data.name = id;
+    return await ctx.sendMessage("tour.notFound", { parse_mode: "Markdown" });
   }
+  const tours = response;
 
-  const tours = _(response).map(tour => {
-    const code = tour["cod"];
-    const to = tour["destino"];
-    const times = tour["horarios"]
-      .map(schedule => {
-        const day = schedule["tipoDia"];
-        const start = schedule["inicio"];
-        const end = schedule["fin"];
-        return dedent`
-        :calendar: ${day}
-        • ${start} - ${end}`;
-      })
-      .join("\n\n");
+  ctx.data.name = id;
+  ctx.data.tours = tours;
 
-    const stops = _(tour["paradas"])
-      .map(
-        stop => dedent`
-          :busstop: /${stop["cod"]} (${_.capitalize(stop["comuna"])})
-          ${stop["name"]}
-        `
-      )
-      .join("\n\n");
+  ctx.session.tour = {
+    tours,
+  };
 
-    return dedent`
-      :bus: *Recorrido* *${code} → ${to}*
+  ctx.inlineKeyboard(
+    tours.map((tour, index) => [
+      {
+        [`:checkered_flag: ${tour["destino"]}`]: { callbackData: { index, page: 0 } },
+      },
+    ])
+  );
 
-      ${times}
-
-      ${stops}
-    `;
+  return await ctx.sendMessage("tour.found", {
+    parse_mode: "Markdown",
+    reply_markup: { inline_keyboard: [[]] },
   });
-
-  for (const message of tours) {
-    await ctx.sendMessage(truncate(message, MAX_BYTES), { parse_mode: "Markdown" });
-  }
 }
 
 /**
@@ -482,7 +493,44 @@ async function handleBusTour(ctx, id = undefined) {
  */
 bot
   .command(/^[a-zA-Z0-9]{1}[0-9]+/) // TODO: refine this
-  .invoke(handleBusTour);
+  .invoke(handleBusTour)
+  .callback(async ctx => {
+    const { tour: { tours } } = ctx.session;
+    const { index, page: current } = ctx.callbackData;
+    const tour = tours[index];
+    const stops = _(tour["paradas"]).filter("cod").sortBy("distancia").map(stop =>
+      Object.assign(stop, {
+        servicios: _.sortBy(stop["servicios"], "cod"),
+      })
+    );
+
+    const pages = stops.chunk(config.get("PAGINATION:SIZE")).value(); // paginate
+
+    ctx.data.name = tour["cod"];
+    ctx.data.to = tour["destino"];
+    ctx.data.stops = pages[current];
+    ctx.data.paging = {
+      total: stops.size(),
+      pages: pages.length,
+      current,
+    };
+
+    ctx.inlineKeyboard([
+      [
+        current > 0 && {
+          "menu.back": { callbackData: { index, page: current - 1 } },
+        },
+        current < ctx.data.paging.pages - 1 && {
+          "menu.next": { callbackData: { index, page: current + 1 } },
+        },
+      ].filter(Boolean),
+    ]);
+
+    await ctx.updateText("tour.stops", {
+      parse_mode: "Markdown",
+      // reply_markup: { inline_keyboard: [[]] }, // HACK
+    });
+  });
 
 /**
  * /(BUS_STOP)
