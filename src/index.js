@@ -394,10 +394,25 @@ async function handleBusStop(ctx, id = undefined) {
     )
     .value();
 
-  await ctx.sendMessage("stop.found", { parse_mode: "Markdown" });
+  ctx.session.stop = {
+    position: [response["x"], response["y"]],
+  };
+
+  const inline = [
+    [
+      {
+        "Mostrar en el mapa": { callbackData: { id } },
+      },
+    ],
+  ];
   if (response["x"] && response["y"]) {
-    await ctx.sendLocation(response["x"], response["y"]);
+    ctx.inlineKeyboard(inline);
   }
+
+  await ctx.sendMessage("stop.found", {
+    parse_mode: "Markdown",
+    reply_markup: { inline_keyboard: [[]] },
+  });
 }
 
 async function handleBusTour(ctx, id = undefined) {
@@ -466,7 +481,14 @@ bot
  */
 bot
   .command(/^[a-zA-Z]{2}[0-9]+/) // Match first 2 alphabetic digits and the rest must be numbers.
-  .invoke(handleBusStop);
+  .invoke(handleBusStop)
+  .callback(async ctx => {
+    const { stop: { position } } = ctx.session;
+    const { id } = ctx.callbackData;
+
+    await ctx.updateText(`Mostrando posición de /${id}:`);
+    await ctx.sendLocation(...position);
+  });
 
 // eslint-disable-next-line
 console.log(dedent`
