@@ -54,6 +54,18 @@ bot.command(/.*/).use("before", async ctx => {
   console.log(date, `@${ctx.meta.user.username} (${ctx.meta.user.language_code}):`, `/${name} ${args}`);
 });
 
+bot
+  .command("test")
+  .invoke(ctx => {
+    ctx.sendMessage("You just invoked the /test command!", { reply_markup: { inline_keyboard: [[]] } }); // <-- This is a hack!
+
+    ctx.inlineKeyboard([[{ "This was set by .invoke()": { callbackData: { caller: "invoke" } } }]]);
+  })
+  .callback(ctx => {
+    ctx.inlineKeyboard([[{ "This was set by .callback()": { callbackData: { caller: "callback" } } }]]);
+    return ctx.updateText("You clicked the button!");
+  });
+
 /**
  * /start
  * Init bot showing this first message.
@@ -194,25 +206,30 @@ bot
     `);
   })
   .answer(async ctx => {
-    const answer = ctx.answer;
-    let { location } = ctx.message;
+    let { answer, message: { location } } = ctx;
 
-    if (!(answer && answer.length) && !location) {
+    if (!answer && !location) {
       return await ctx.repeat();
-    } else if (answer && answer.length && !location) {
+    }
+
+    if (answer && !location) {
       ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
       const results = await googleMaps.getPlacesByAddress(answer);
-      if (!(results && results.length)) {
+      if (results.length === 0) {
         const message = `No pudimos encontrar un lugar con ese nombre.`;
         return await ctx.sendMessage(message, { parse_mode: "Markdown" });
       }
 
-      const result = results[0];
-      const message = `Buscando cerca de ${result["formatted_address"]}...`;
-      await ctx.sendMessage(message, { parse_mode: "Markdown" });
-
-      location = result.geometry.location;
+      answer = results[0]["formatted_address"];
+      location = results[0].geometry.location;
     }
+
+    if (!answer && location) {
+      const results = await googleMaps.getPlacesByCoordinates(location);
+      answer = results[0]["formatted_address"];
+    }
+
+    await ctx.sendMessage(`Buscando cerca de ${answer}...`, { parse_mode: "Markdown" });
 
     ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
     const response = await transantiago.getStops(location);

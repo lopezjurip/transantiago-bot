@@ -2,10 +2,12 @@ const axios = require("axios");
 
 // See: https://developers.google.com/maps/documentation/geocoding/intro?hl=es-419
 class GoogleMapsAPI {
-  static get bounds() {
+  static get cities() {
     return {
-      // http://nominatim.openstreetmap.org/search.php?q=santiago%2C+chile&polygon_geojson=1&viewbox=
-      Santiago: [["-71.48529", "-33.14790"], ["-70.25482", "-33.94906"]],
+      Santiago: {
+        bounds: [["-71.48529", "-33.14790"], ["-70.25482", "-33.94906"]],
+        components: ["country:CL", "administrative_area:Santiago"],
+      },
     };
   }
 
@@ -17,19 +19,29 @@ class GoogleMapsAPI {
     });
   }
 
+  async getPlacesByCoordinates(coordinates = {}) {
+    const latitude = coordinates.latitude || coordinates.lat;
+    const longitude = coordinates.longitude || coordinates.lng;
+    const params = {
+      key: this.key,
+      latlng: [latitude, longitude].join(","),
+    };
+    const { data } = await this.client.get("geocode/json", { params });
+    return data.results || [];
+  }
+
   async getPlacesByAddress(address = "") {
     const params = {
-      language: "es_CL",
+      language: "es",
       region: "cl",
       key: this.key,
-      bounds: GoogleMapsAPI.bounds["Santiago"].map(box => box.join(",")).join("|"),
+      bounds: GoogleMapsAPI.cities["Santiago"].bounds.map(box => box.join(",")).join("|"),
+      components: GoogleMapsAPI.cities["Santiago"].components.join("|"),
       address,
     };
     const { data } = await this.client.get("geocode/json", { params });
-    return data.results;
+    return data.results || [];
   }
 }
-
-// https://maps.googleapis.com/maps/api/geocode/json?address=
 
 module.exports = GoogleMapsAPI;
