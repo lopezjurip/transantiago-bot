@@ -106,7 +106,7 @@ bot.texts({
       :busstop: /<%= stop["cod"] -%> _(<%= stop["distancia"] -%> km)_
       <%= stop["name"] -%>
       <% stop["servicios"].forEach(service => { %>
-      ↳ :bus: /<%= service["cod"] %> <%= service["destino"] -%>
+        ↳ :bus: /<%= service["cod"] %> <%= service["destino"] -%>
       <% }); %>
       <% }); %>
     `,
@@ -116,6 +116,28 @@ bot.texts({
       ¿Qué paradero quieres consultar?
       Por Ejemplo: /<%= example %>.
       Para cancelar escribe /cancelar.
+    `,
+    notFound: dedent`
+      No pudimos encontrar un paradero llamado <%= name %>.
+    `,
+    found: dedent`
+      :busstop: *Paradero <%= stop["paradero"] %>*
+      <%= stop["nomett"] %>
+      _Actualizado: <%= stop["horaprediccion"] -%>_
+      <% services.forEach(service => { -%>
+      <% if (service["destino"]) { %>
+      :bus: /<%= service["servicio"] %> → <%= service["destino"] %>
+      <% } else { -%>
+      :bus: /<%= service["servicio"] %> → :question:
+      <% } -%>
+      <% service["buses"].forEach(bus => { -%>
+        ↳ \`<%= bus["plate"] %>\` _( km):_
+             <%= bus["time"] %>
+      <% }) -%>
+      <% if (service["respuestaServicio"]) { -%>
+      <%= service["respuestaServicio"] %>
+      <% } -%>
+      <% }); %>
     `,
   },
   tour: {
@@ -353,43 +375,26 @@ async function handleBusStop(ctx, id = undefined) {
   const response = await transantiago.getStop(id);
 
   if (!response) {
-    const message = `No encontramos paraderos para ${id}.`;
-    return await ctx.sendMessage(message, { parse_mode: "Markdown" });
+    ctx.data.name = id;
+    return await ctx.sendMessage("stop.notFound", { parse_mode: "Markdown" });
   }
 
-  const services = _(response["servicios"]["item"])
+  ctx.data.stop = response;
+  ctx.data.services = _(response["servicios"]["item"])
     .sortBy("servicio")
-    .map(service => {
-      const name = service["servicio"];
-      const to = service["destino"] || ":question:";
+    .map(service =>
+      Object.assign(service, {
+        // TODO: do not depend on [1, 2]
+        buses: [1, 2].filter(n => service[`distanciabus${n}`]).map(n => ({
+          plate: service[`ppubus${n}`],
+          distance: numeral(service[`distanciabus${n}`]).divide(1000).format("0.[00]"),
+          time: service[`horaprediccionbus${n}`],
+        })),
+      })
+    )
+    .value();
 
-      const buses = [1, 2]
-        .filter(n => service[`distanciabus${n}`])
-        .map(n => {
-          const plate = service[`ppubus${n}`];
-          const distance = numeral(service[`distanciabus${n}`]).divide(1000);
-          const time = service[`horaprediccionbus${n}`];
-          return dedent`
-            ↳ \`${plate}\` _(${distance.format("0.[00]")} km)_:
-            *${time}*
-          `;
-        })
-        .join("\n");
-
-      const lines = [`:bus: /${name} → ${to}`, buses, service["respuestaServicio"]];
-      return lines.filter(Boolean).join("\n");
-    })
-    .join("\n\n");
-
-  const message = dedent`
-    :busstop: *Paradero ${response["paradero"]}*
-    ${response["nomett"]}
-    _Actualizado: ${response["horaprediccion"]}_
-
-    ${services}
-  `;
-
-  await ctx.sendMessage(truncate(message, MAX_BYTES), { parse_mode: "Markdown" });
+  await ctx.sendMessage("stop.found", { parse_mode: "Markdown" });
   if (response["x"] && response["y"]) {
     await ctx.sendLocation(response["x"], response["y"]);
   }
