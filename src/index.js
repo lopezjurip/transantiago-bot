@@ -316,6 +316,7 @@ async function handleNear(ctx) {
     // Can't add 'numeral' helper
     Object.assign(stop, {
       distancia: numeral(stop["distancia"]).format("0.[00]"),
+      servicios: _.sortBy(stop["servicios"], "cod"),
     })
   );
 
