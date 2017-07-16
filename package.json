@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "axios": "^0.16.2",
+    "bluebird": "^3.5.0",
     "bot-brother": "^2.1.5",
     "dedent": "^0.7.0",
     "deline": "^1.0.4",
@@ -44,6 +45,7 @@
     "mz": "^2.6.0",
     "nconf": "^0.8.4",
     "numeral": "^2.0.6",
+    "redis": "^2.7.1",
     "unicode-byte-truncate": "^1.0.0"
   }
 }

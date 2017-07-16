@@ -1,6 +1,8 @@
 "use strict";
 
 const bb = require("bot-brother");
+const redis = require("redis");
+const Bluebird = require("bluebird");
 const dedent = require("dedent");
 const numeral = require("numeral");
 const _ = require("lodash");
@@ -8,6 +10,9 @@ const moment = require("moment");
 const truncate = require("unicode-byte-truncate");
 const fs = require("mz/fs");
 const path = require("path");
+
+Bluebird.promisifyAll(redis.RedisClient.prototype);
+Bluebird.promisifyAll(redis.Multi.prototype);
 
 const configuration = require("./configuration");
 const Transantiago = require("./TransantiagoAPI");
@@ -20,15 +25,16 @@ const config = configuration();
 // See: https://core.telegram.org/method/messages.sendMessage#return-errors
 const MAX_BYTES = 4096;
 
-const url = config.get("URL");
-const token = config.get("TELEGRAM:TOKEN");
-const manager = bb.sessionManager.redis({
+const transantiago = new Transantiago();
+const googleMaps = new GoogleMaps(config.get("GOOGLE:MAPS:KEY"));
+const client = redis.createClient({
   port: config.get("REDIS:PORT"),
   host: config.get("REDIS:HOST"),
 });
 
-const transantiago = new Transantiago();
-const googleMaps = new GoogleMaps(config.get("GOOGLE:MAPS:KEY"));
+const url = config.get("URL");
+const token = config.get("TELEGRAM:TOKEN");
+const manager = bb.sessionManager.redis({ client });
 
 const bot = bb({
   key: token,
@@ -74,6 +80,10 @@ bot.texts({
     OK, dejaré de hacer lo que estaba haciendo.
     ¿Necesitas ayuda? Escribe /help.
   `,
+  menu: {
+    back: ":arrow_backward: Volver",
+    next: ":arrow_forward: Ver más",
+  },
   near: {
     ask: dedent`
       Puedes:
@@ -90,7 +100,8 @@ bot.texts({
       Buscando cerca de <%= name %>...
     `,
     found: dedent`
-      :information_desk_person: Encontré esto:
+      :information_desk_person: Encontré <%= paging.total %> paraderos ordenados por cercanía.
+      :book: Mostrando página <%= paging.current + 1 %> de <%= paging.pages %>:
       <% stops.forEach(stop => { %>
       :busstop: /<%= stop["cod"] -%> _(<%= stop["distancia"] -%> km)_
       <%= stop["name"] -%>
@@ -98,7 +109,6 @@ bot.texts({
       ↳ :bus: /<%= service["cod"] %> <%= service["destino"] -%>
       <% }); %>
       <% }); %>
-      :bus: ¿Qué paradero quieres revisar?
     `,
   },
   stop: {
@@ -218,9 +228,38 @@ bot
 bot
   .command("cerca")
   .invoke(async ctx => {
-    return await ctx.sendMessage("near.ask", { parse_mode: "Markdown" });
+    await ctx.sendMessage("near.ask", {
+      parse_mode: "Markdown",
+      reply_markup: { inline_keyboard: [[]] },
+    });
   })
-  .answer(handleNear);
+  .answer(handleNear)
+  .callback(async ctx => {
+    const { near: { pages, paging } } = ctx.session;
+    const { i: current } = ctx.callbackData;
+
+    ctx.data.stops = pages[current];
+    ctx.data.paging = Object.assign({}, paging, {
+      current,
+    });
+
+    const inline = [
+      [
+        current > 0 && {
+          "menu.back": { callbackData: { i: current - 1 } },
+        },
+        current < ctx.data.paging.pages - 1 && {
+          "menu.next": { callbackData: { i: current + 1 } },
+        },
+      ].filter(Boolean),
+    ];
+    ctx.inlineKeyboard(inline);
+
+    await ctx.updateText("near.found", {
+      parse_mode: "Markdown",
+      // reply_markup: { inline_keyboard: [[]] }, // HACK
+    });
+  });
 
 async function handleNear(ctx) {
   let { answer, message: { location } } = ctx;
@@ -258,21 +297,53 @@ async function handleNear(ctx) {
     })
   );
 
-  ctx.data.stops = stops.value();
+  const latitude = location.latitude || location.lat;
+  const longitude = location.longitude || location.lng;
 
-  const keyboard = stops
-    .map(stop => ({
-      [stop["cod"]]: {
-        go: stop["cod"],
-        // args: [stop["cod"]],
+  const pages = stops.chunk(config.get("PAGINATION:SIZE")).value(); // paginate
+  const current = 0;
+
+  ctx.data.stops = pages[0];
+  ctx.data.paging = {
+    total: stops.size(),
+    pages: pages.length,
+    current,
+  };
+
+  ctx.session.near = {
+    answer,
+    latitude,
+    longitude,
+    pages,
+    paging: ctx.data.paging,
+  };
+
+  const inline = [
+    [
+      current > 0 && {
+        "menu.back": { callbackData: { i: current - 1 } },
       },
-    }))
-    .chunk(3)
-    .concat([[{ Cancelar: { go: "cancelar" } }]]) // Add a last button.
-    .value();
+      current < ctx.data.paging.pages - 1 && {
+        "menu.next": { callbackData: { i: current + 1 } },
+      },
+    ].filter(Boolean),
+  ];
+  ctx.inlineKeyboard(inline);
 
-  ctx.keyboard(keyboard);
-  return await ctx.sendMessage("near.found", { parse_mode: "Markdown" });
+  // TODO: "copy" (HOW TO DRY IT?) this code on answer
+  // const keyboard = stops
+  //   .map(stop => ({
+  //     [stop["cod"]]: { go: stop["cod"] },
+  //   }))
+  //   .chunk(3)
+  //   .concat([[{ Cancelar: { go: "cancelar" } }]]) // Add a last button.
+  //   .value();
+  // ctx.keyboard(keyboard);
+
+  return await ctx.sendMessage("near.found", {
+    parse_mode: "Markdown",
+    reply_markup: { inline_keyboard: [[]] },
+  });
 }
 
 async function handleBusStop(ctx, id = undefined) {

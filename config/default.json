@@ -1,6 +1,9 @@
 {
   "PORT": 4000,
   "URL": "https://something.ngrok.io",
+  "PAGINATION": {
+    "SIZE": 4
+  },
   "REDIS": {
     "HOST": "127.0.0.1",
     "PORT": "6379"
