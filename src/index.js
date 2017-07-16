@@ -39,13 +39,83 @@ const bot = bb({
   },
 });
 
-// eslint-disable-next-line
-console.log(dedent`
-  Bot Started with:
-  - URL: ${url}
-  - PORT: ${config.get("PORT")}
-  - TOKEN: ${_.fill([...token], "*", 0, -5).join("")}
-`);
+bot.texts({
+  start: dedent`
+    *¡Transantiago Bot te saluda humano <%= user.first_name %>* :oncoming_bus: :wave:
+
+    Este bot es _no-oficial_ y fue desarrollado usando información pública y en tiempo real del Transantiago. :information_desk_person:
+
+    Información y datos para realizar una donación y mantener este proyecto vivo al escribir /about.
+
+    :crystal_ball: Los comandos disponibles son los siguientes:
+    <% commands.forEach(command => { %>
+    /<%= command -%>
+    <% }); -%>
+  `,
+  about: dedent`
+    *Transantiago Bot (<%= info.version %>)*
+    *Licencia:* <%= info.license %>
+    *Repositorio:* <%= info.repository.url %>
+
+    Este bot es _no-oficial_ y no guarda relación con el Transantiago ni el Ministerio de Transportes.
+
+    :bust_in_silhouette: *Autor:*
+     • <%= info.author.name %>
+     • <%= info.author.email %>
+     • <%= info.author.url %>
+     • @<%= info.author.telegram %>
+
+    :pray: *Ayúdame a mantener esto con alguna donación:*
+    - PayPal <%= info.author.paypal %>
+    - Bitcoin: \`<%= info.author.btc %>\`
+    - Ether: \`<%= info.author.eth %>\`
+  `,
+  cancel: dedent`
+    OK, dejaré de hacer lo que estaba haciendo.
+    ¿Necesitas ayuda? Escribe /help.
+  `,
+  near: {
+    ask: dedent`
+      Puedes:
+      :round_pushpin: Mandanos tu ubicación por Telegram.
+      :pencil2: Escribir una dirección en el chat.
+
+      Si quieres cancelar esta acción, escribe /cancelar.
+    `,
+    notFound: dedent`
+      No pudimos encontrar un lugar con el nombre:
+      <%= name %>
+    `,
+    finding: dedent`
+      Buscando cerca de <%= name %>...
+    `,
+    found: dedent`
+      :information_desk_person: Encontré esto:
+      <% stops.forEach(stop => { %>
+      :busstop: /<%= stop["cod"] -%> _(<%= stop["distancia"] -%> km)_
+      <%= stop["name"] -%>
+      <% stop["servicios"].forEach(service => { %>
+      ↳ :bus: /<%= service["cod"] %> <%= service["destino"] -%>
+      <% }); %>
+      <% }); %>
+      :bus: ¿Qué paradero quieres revisar?
+    `,
+  },
+  stop: {
+    ask: dedent`
+      ¿Qué paradero quieres consultar?
+      Por Ejemplo: /<%= example %>.
+      Para cancelar escribe /cancelar.
+    `,
+  },
+  tour: {
+    ask: dedent`
+      ¿Qué recorrido quieres consultar?
+      Por Ejemplo: /<%= example %>.
+      Para cancelar escribe /cancelar.
+    `,
+  },
+});
 
 bot.command(/.*/).use("before", async ctx => {
   const { name, args } = ctx.command;
@@ -54,40 +124,16 @@ bot.command(/.*/).use("before", async ctx => {
   console.log(date, `@${ctx.meta.user.username} (${ctx.meta.user.language_code}):`, `/${name} ${args}`);
 });
 
-bot
-  .command("test")
-  .invoke(ctx => {
-    ctx.sendMessage("You just invoked the /test command!", { reply_markup: { inline_keyboard: [[]] } }); // <-- This is a hack!
-
-    ctx.inlineKeyboard([[{ "This was set by .invoke()": { callbackData: { caller: "invoke" } } }]]);
-  })
-  .callback(ctx => {
-    ctx.inlineKeyboard([[{ "This was set by .callback()": { callbackData: { caller: "callback" } } }]]);
-    return ctx.updateText("You clicked the button!");
-  });
-
 /**
  * /start
  * Init bot showing this first message.
  */
 bot.command("start").invoke(async ctx => {
-  const { user } = ctx.meta;
-
   const txt = await fs.readFile(path.join(__dirname, "..", "docs", "commands.txt"), "utf8");
-  const commands = txt.split("\n").filter(Boolean).map(line => `/${line}`).join("\n");
 
-  const message = dedent`
-    *¡Transantiago Bot te saluda humano ${user.first_name}!* :oncoming_bus: :wave:
-
-    Este bot es _no-oficial_ y fue desarrollado usando información pública y en tiempo real del Transantiago. :information_desk_person:
-
-    Información y datos para realizar una donación y mantener este proyecto vivo al escribir /about.
-
-    :crystal_ball: Los comandos disponibles son los siguientes:
-
-    ${commands}
-  `;
-  await ctx.sendMessage(message, { parse_mode: "Markdown" });
+  ctx.data.commands = txt.split("\n").filter(Boolean);
+  ctx.data.user = ctx.meta.user;
+  await ctx.sendMessage("start", { parse_mode: "Markdown" });
 });
 
 /**
@@ -103,25 +149,8 @@ bot.command("help").invoke(async ctx => {
  * Show information from `package.json` like version, author and donation addresses.
  */
 bot.command("about").invoke(async ctx => {
-  const message = dedent`
-    *Transantiago Bot (${info.version})*
-    *Licencia:* ${info.license}
-    *Repositorio:* ${info.repository.url}
-
-    Este bot es _no-oficial_ y no guarda relación con el Transantiago ni el Ministerio de Transportes.
-
-    :bust_in_silhouette: *Autor:*
-     • ${info.author.name}
-     • ${info.author.email}
-     • ${info.author.url}
-     • @${info.author.telegram}
-
-    :pray: *Ayúdame a mantener esto con alguna donación:*
-    - PayPal ${info.author.paypal}
-    - Bitcoin: \`${info.author.btc}\`
-    - Ether: \`${info.author.eth}\`
-  `;
-  await ctx.sendMessage(message, { parse_mode: "Markdown" });
+  ctx.data.info = info;
+  await ctx.sendMessage("about", { parse_mode: "Markdown" });
 });
 
 /**
@@ -130,10 +159,7 @@ bot.command("about").invoke(async ctx => {
  */
 bot.command("cancelar").invoke(async ctx => {
   ctx.hideKeyboard();
-  await ctx.sendMessage(dedent`
-    OK, dejaré de hacer lo que estaba haciendo.
-    ¿Necesitas ayuda? /help
-  `);
+  await ctx.sendMessage("cancel", { parse_mode: "Markdown" });
 });
 
 /**
@@ -143,22 +169,20 @@ bot.command("cancelar").invoke(async ctx => {
 bot
   .command("paradero")
   .invoke(async ctx => {
-    if (ctx.command.args.length >= 1) {
-      return await ctx.go(ctx.command.args[0]);
+    if (ctx.command.args.length === 0) {
+      ctx.data.example = "PA692";
+      return await ctx.sendMessage("stop.ask", { parse_mode: "Markdown" });
     } else {
-      return await ctx.sendMessage(dedent`
-        ¿Qué paradero quieres consultar?
-        Por Ejemplo: /PA692.
-        Para cancelar escribe /cancelar.
-      `);
+      const [command, ...args] = ctx.command.args;
+      return await ctx.go(command, { args });
     }
   })
   .answer(async ctx => {
-    const answer = ctx.answer;
-    if (!answer) {
+    if (!ctx.answer) {
       return await ctx.repeat();
     } else {
-      return await ctx.go(answer.toUpperCase());
+      const command = ctx.answer.toUpperCase();
+      return await ctx.go(command);
     }
   });
 
@@ -169,23 +193,20 @@ bot
 bot
   .command("recorrido")
   .invoke(async ctx => {
-    if (ctx.command.args.length >= 1) {
-      return await ctx.go(ctx.command.args[0]);
+    if (ctx.command.args.length === 0) {
+      ctx.data.example = "422";
+      return await ctx.sendMessage("tour.ask", { parse_mode: "Markdown" });
     } else {
-      const message = dedent`
-        ¿Qué recorrido quieres consultar?
-        Por Ejemplo: /422.
-        Para cancelar escribe /cancelar.
-      `;
-      return await ctx.sendMessage(message);
+      const [command, ...args] = ctx.command.args;
+      return await ctx.go(command, { args });
     }
   })
   .answer(async ctx => {
-    const answer = ctx.answer;
-    if (!answer) {
+    if (!ctx.answer) {
       return await ctx.repeat();
     } else {
-      return await ctx.go(answer.toUpperCase());
+      const command = ctx.answer.toUpperCase();
+      return await ctx.go(command);
     }
   });
 
@@ -197,133 +218,159 @@ bot
 bot
   .command("cerca")
   .invoke(async ctx => {
-    return await ctx.sendMessage(dedent`
-      Puedes:
-      :round_pushpin: Mandanos tu ubicación por Telegram.
-      :pencil2: Escribir una dirección en el chat.
-
-      Si quieres cancelar esta acción, escribe /cancelar.
-    `);
+    return await ctx.sendMessage("near.ask", { parse_mode: "Markdown" });
   })
-  .answer(async ctx => {
-    let { answer, message: { location } } = ctx;
+  .answer(handleNear);
 
-    if (!answer && !location) {
-      return await ctx.repeat();
-    }
+async function handleNear(ctx) {
+  let { answer, message: { location } } = ctx;
 
-    if (answer && !location) {
-      ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-      const results = await googleMaps.getPlacesByAddress(answer);
-      if (results.length === 0) {
-        const message = `No pudimos encontrar un lugar con ese nombre.`;
-        return await ctx.sendMessage(message, { parse_mode: "Markdown" });
-      }
+  if (!answer && !location) {
+    return await ctx.repeat();
+  }
 
-      answer = results[0]["formatted_address"];
-      location = results[0].geometry.location;
-    }
-
-    if (!answer && location) {
-      const results = await googleMaps.getPlacesByCoordinates(location);
-      answer = results[0]["formatted_address"];
-    }
-
-    await ctx.sendMessage(`Buscando cerca de ${answer}...`, { parse_mode: "Markdown" });
-
+  if (answer && !location) {
     ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-    const response = await transantiago.getStops(location);
+    const results = await googleMaps.getPlacesByAddress(answer);
+    if (results.length === 0) {
+      ctx.data.name = answer;
+      return await ctx.sendMessage("near.notFound", { parse_mode: "Markdown" });
+    }
 
-    const stops = _(response).filter("cod").sortBy("cod");
+    answer = results[0]["formatted_address"];
+    location = results[0].geometry.location;
+  }
 
-    const list = stops
-      .map(
-        stop => dedent`
-        :busstop: /${stop["cod"]} _(${numeral(stop["distancia"]).format("0.[00]")} km)_
-        ${stop["name"]}
-      `
-      )
-      .join("\n\n");
+  if (!answer && location) {
+    const results = await googleMaps.getPlacesByCoordinates(location);
+    answer = results[0]["formatted_address"];
+  }
 
-    const message = dedent`
-      :information_desk_person: Encontré esto:
+  ctx.data.name = answer;
+  await ctx.sendMessage("near.finding", { parse_mode: "Markdown" });
 
-      ${list}
+  ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
+  const response = await transantiago.getStops(location);
+  const stops = _(response).filter("cod").sortBy("distancia").map(stop =>
+    // Can't add 'numeral' helper
+    Object.assign(stop, {
+      distancia: numeral(stop["distancia"]).format("0.[00]"),
+    })
+  );
 
-      :bus: ¿Qué paradero quieres revisar?
-    `;
+  ctx.data.stops = stops.value();
 
-    const keyboard = stops
-      .map(stop => ({
-        [stop["cod"]]: {
-          go: stop["cod"],
-          // args: [stop["cod"]],
-        },
-      }))
-      .chunk(3)
-      .concat([[{ Cancelar: { go: "cancelar" } }]]) // Add a last button.
-      .value();
+  const keyboard = stops
+    .map(stop => ({
+      [stop["cod"]]: {
+        go: stop["cod"],
+        // args: [stop["cod"]],
+      },
+    }))
+    .chunk(3)
+    .concat([[{ Cancelar: { go: "cancelar" } }]]) // Add a last button.
+    .value();
 
-    ctx.keyboard(keyboard);
+  ctx.keyboard(keyboard);
+  return await ctx.sendMessage("near.found", { parse_mode: "Markdown" });
+}
+
+async function handleBusStop(ctx, id = undefined) {
+  id = id || ctx.command.name.toUpperCase().trim();
+
+  ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
+  const response = await transantiago.getStop(id);
+
+  if (!response) {
+    const message = `No encontramos paraderos para ${id}.`;
     return await ctx.sendMessage(message, { parse_mode: "Markdown" });
-  });
+  }
 
-/**
- * /(BUS_STOP)
- * Example: /PA692
- * Get buses and their plate and time.
- * TODO: check regex.
- */
-bot
-  .command(/^[a-zA-Z]{2}[0-9]+/) // Match first 2 alphabetic digits and the rest must be numbers.
-  .invoke(async ctx => {
-    const id = ctx.command.name.toUpperCase().trim();
+  const services = _(response["servicios"]["item"])
+    .sortBy("servicio")
+    .map(service => {
+      const name = service["servicio"];
+      const to = service["destino"] || ":question:";
 
-    ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-    const response = await transantiago.getStop(id);
+      const buses = [1, 2]
+        .filter(n => service[`distanciabus${n}`])
+        .map(n => {
+          const plate = service[`ppubus${n}`];
+          const distance = numeral(service[`distanciabus${n}`]).divide(1000);
+          const time = service[`horaprediccionbus${n}`];
+          return dedent`
+            ↳ \`${plate}\` _(${distance.format("0.[00]")} km)_:
+            *${time}*
+          `;
+        })
+        .join("\n");
 
-    if (!response) {
-      const message = `No encontramos paraderos para ${id}.`;
-      return await ctx.sendMessage(message, { parse_mode: "Markdown" });
-    }
+      const lines = [`:bus: /${name} → ${to}`, buses, service["respuestaServicio"]];
+      return lines.filter(Boolean).join("\n");
+    })
+    .join("\n\n");
 
-    const services = _(response["servicios"]["item"])
-      .sortBy("servicio")
-      .map(service => {
-        const name = service["servicio"];
-        const to = service["destino"] || ":question:";
+  const message = dedent`
+    :busstop: *Paradero ${response["paradero"]}*
+    ${response["nomett"]}
+    _Actualizado: ${response["horaprediccion"]}_
 
-        const buses = [1, 2]
-          .filter(n => service[`distanciabus${n}`])
-          .map(n => {
-            const plate = service[`ppubus${n}`];
-            const distance = numeral(service[`distanciabus${n}`]).divide(1000);
-            const time = service[`horaprediccionbus${n}`];
-            return dedent`
-              ↳ \`${plate}\` _(${distance.format("0.[00]")} km)_:
-              *${time}*
-            `;
-          })
-          .join("\n");
+    ${services}
+  `;
 
-        const lines = [`:bus: /${name} → ${to}`, buses, service["respuestaServicio"]];
-        return lines.filter(Boolean).join("\n");
+  await ctx.sendMessage(truncate(message, MAX_BYTES), { parse_mode: "Markdown" });
+  if (response["x"] && response["y"]) {
+    await ctx.sendLocation(response["x"], response["y"]);
+  }
+}
+
+async function handleBusTour(ctx, id = undefined) {
+  id = id || ctx.command.name.toUpperCase().trim();
+
+  ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
+  const response = await transantiago.getTours(id);
+
+  if (!response) {
+    const message = `No encontramos recorridos para ${id}.`;
+    return ctx.sendMessage(message, { parse_mode: "Markdown" });
+  }
+
+  const tours = _(response).map(tour => {
+    const code = tour["cod"];
+    const to = tour["destino"];
+    const times = tour["horarios"]
+      .map(schedule => {
+        const day = schedule["tipoDia"];
+        const start = schedule["inicio"];
+        const end = schedule["fin"];
+        return dedent`
+        :calendar: ${day}
+        • ${start} - ${end}`;
       })
       .join("\n\n");
 
-    const message = dedent`
-      :busstop: *Paradero ${response["paradero"]}*
-      ${response["nomett"]}
-      _Actualizado: ${response["horaprediccion"]}_
+    const stops = _(tour["paradas"])
+      .map(
+        stop => dedent`
+          :busstop: /${stop["cod"]} (${_.capitalize(stop["comuna"])})
+          ${stop["name"]}
+        `
+      )
+      .join("\n\n");
 
-      ${services}
+    return dedent`
+      :bus: *Recorrido* *${code} → ${to}*
+
+      ${times}
+
+      ${stops}
     `;
-
-    await ctx.sendMessage(truncate(message, MAX_BYTES), { parse_mode: "Markdown" });
-    if (response["x"] && response["y"]) {
-      await ctx.sendLocation(response["x"], response["y"]);
-    }
   });
+
+  for (const message of tours) {
+    await ctx.sendMessage(truncate(message, MAX_BYTES), { parse_mode: "Markdown" });
+  }
+}
 
 /**
  * /(BUS)
@@ -333,50 +380,22 @@ bot
  */
 bot
   .command(/^[a-zA-Z0-9]{1}[0-9]+/) // TODO: refine this
-  .invoke(async ctx => {
-    const id = ctx.command.name.toUpperCase().trim();
+  .invoke(handleBusTour);
 
-    ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-    const response = await transantiago.getTours(id);
+/**
+ * /(BUS_STOP)
+ * Example: /PA692
+ * Get buses and their plate and time.
+ * TODO: check regex.
+ */
+bot
+  .command(/^[a-zA-Z]{2}[0-9]+/) // Match first 2 alphabetic digits and the rest must be numbers.
+  .invoke(handleBusStop);
 
-    if (!response) {
-      const message = `No encontramos recorridos para ${id}.`;
-      return ctx.sendMessage(message, { parse_mode: "Markdown" });
-    }
-
-    const tours = _(response).map(tour => {
-      const code = tour["cod"];
-      const to = tour["destino"];
-      const times = tour["horarios"]
-        .map(schedule => {
-          const day = schedule["tipoDia"];
-          const start = schedule["inicio"];
-          const end = schedule["fin"];
-          return dedent`
-          :calendar: ${day}
-          • ${start} - ${end}`;
-        })
-        .join("\n\n");
-
-      const stops = _(tour["paradas"])
-        .map(
-          stop => dedent`
-            :busstop: /${stop["cod"]} (${_.capitalize(stop["comuna"])})
-            ${stop["name"]}
-          `
-        )
-        .join("\n\n");
-
-      return dedent`
-        :bus: *Recorrido* *${code} → ${to}*
-
-        ${times}
-
-        ${stops}
-      `;
-    });
-
-    for (const message of tours) {
-      await ctx.sendMessage(truncate(message, MAX_BYTES), { parse_mode: "Markdown" });
-    }
-  });
+// eslint-disable-next-line
+console.log(dedent`
+  Bot Started with:
+  - URL: ${url}
+  - PORT: ${config.get("PORT")}
+  - TOKEN: ${_.fill([...token], "*", 0, -5).join("")}
+`);
