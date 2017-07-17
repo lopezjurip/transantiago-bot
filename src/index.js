@@ -552,6 +552,7 @@ bot
 // eslint-disable-next-line
 console.log(dedent`
   Bot Started with:
+  - NODE_ENV: ${config.get("NODE_ENV")}
   - URL: ${url}
   - PORT: ${config.get("PORT")}
   - TOKEN: ${_.fill([...token], "*", 0, -5).join("")}
