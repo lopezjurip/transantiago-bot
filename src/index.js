@@ -54,7 +54,7 @@ bot.texts({
     <% }); -%>
   `,
   about: dedent`
-    *Transantiago Bot (<%= info.version %>)*
+    *<%= info.name %> (<%= info.version %>)*
     *Licencia:* <%= info.license %>
     *Repositorio:* <%= info.repository.url %>
 
@@ -67,9 +67,12 @@ bot.texts({
      • @<%= info.author.telegram %>
 
     :pray: *Ayúdame a mantener esto con alguna donación:*
-    - PayPal <%= info.author.paypal %>
-    - Bitcoin: \`<%= info.author.btc %>\`
-    - Ether: \`<%= info.author.eth %>\`
+    - PayPal:
+      <%= info.author.paypal %>
+    - Bitcoin:
+      \`<%= info.author.btc %>\`
+    - Ether:
+      \`<%= info.author.eth %>\`
   `,
   cancel: dedent`
     OK, dejaré de hacer lo que estaba haciendo.
@@ -226,8 +229,8 @@ bot
       ctx.data.example = "PA692";
       return await ctx.sendMessage("stop.ask", { parse_mode: "Markdown" });
     } else {
-      const [command, ...args] = ctx.command.args;
-      return await ctx.go(command, { args });
+      const command = ctx.command.args[0].toUpperCase();
+      return await ctx.go(command);
     }
   })
   .answer(async ctx => {
@@ -261,8 +264,8 @@ bot
       ctx.data.example = "422";
       return await ctx.sendMessage("tour.ask", { parse_mode: "Markdown" });
     } else {
-      const [command, ...args] = ctx.command.args;
-      return await ctx.go(command, { args });
+      const command = ctx.command.args[0].toUpperCase();
+      return await ctx.go(command);
     }
   })
   .answer(async ctx => {
@@ -286,7 +289,88 @@ bot
       reply_markup: { inline_keyboard: [[]] },
     });
   })
-  .answer(handleNear)
+  .answer(async ctx => {
+    let { answer, message: { location } } = ctx;
+
+    if (!answer && !location) {
+      return await ctx.repeat();
+    }
+
+    if (answer && !location) {
+      ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
+      const results = await googleMaps.getPlacesByAddress(answer);
+      if (results.length === 0) {
+        ctx.data.name = answer;
+        return await ctx.sendMessage("near.notFound", { parse_mode: "Markdown" });
+      }
+
+      answer = results[0]["formatted_address"];
+      location = results[0].geometry.location;
+    }
+
+    if (!answer && location) {
+      const results = await googleMaps.getPlacesByCoordinates(location);
+      answer = results[0]["formatted_address"];
+    }
+
+    ctx.data.name = answer;
+    await ctx.sendMessage("near.finding", { parse_mode: "Markdown" });
+
+    ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
+    const response = await transantiago.getStops(location);
+    const stops = _(response).filter("cod").sortBy("distancia").map(stop =>
+      // Can't add 'numeral' helper
+      Object.assign(stop, {
+        distancia: numeral(stop["distancia"]).format("0.[00]"),
+        servicios: _.sortBy(stop["servicios"], "cod"),
+      })
+    );
+
+    const latitude = location.latitude || location.lat;
+    const longitude = location.longitude || location.lng;
+
+    const pages = stops.chunk(config.get("PAGINATION:SIZE")).value(); // paginate
+    const current = 0;
+
+    ctx.data.stops = pages[current];
+    ctx.data.paging = {
+      total: stops.size(),
+      pages: pages.length,
+      current,
+    };
+
+    ctx.session.near = {
+      answer,
+      latitude,
+      longitude,
+      pages,
+      paging: ctx.data.paging,
+    };
+
+    const buttons = _(pages[current])
+      .map(stop => ({
+        [`:busstop: /${stop["cod"]}`]: { go: stop["cod"] },
+      }))
+      .chunk(2)
+      .value();
+
+    ctx.inlineKeyboard([
+      ...buttons,
+      [
+        current > 0 && {
+          "menu.back": { callbackData: { i: current - 1 } },
+        },
+        current < ctx.data.paging.pages - 1 && {
+          "menu.next": { callbackData: { i: current + 1 } },
+        },
+      ].filter(Boolean),
+    ]);
+
+    return await ctx.sendMessage("near.found", {
+      parse_mode: "Markdown",
+      reply_markup: { inline_keyboard: [[]] },
+    });
+  })
   .callback(async ctx => {
     const { near: { pages, paging } } = ctx.session;
     const { i: current } = ctx.callbackData;
@@ -321,177 +405,6 @@ bot
     });
   });
 
-async function handleNear(ctx) {
-  let { answer, message: { location } } = ctx;
-
-  if (!answer && !location) {
-    return await ctx.repeat();
-  }
-
-  if (answer && !location) {
-    ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-    const results = await googleMaps.getPlacesByAddress(answer);
-    if (results.length === 0) {
-      ctx.data.name = answer;
-      return await ctx.sendMessage("near.notFound", { parse_mode: "Markdown" });
-    }
-
-    answer = results[0]["formatted_address"];
-    location = results[0].geometry.location;
-  }
-
-  if (!answer && location) {
-    const results = await googleMaps.getPlacesByCoordinates(location);
-    answer = results[0]["formatted_address"];
-  }
-
-  ctx.data.name = answer;
-  await ctx.sendMessage("near.finding", { parse_mode: "Markdown" });
-
-  ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-  const response = await transantiago.getStops(location);
-  const stops = _(response).filter("cod").sortBy("distancia").map(stop =>
-    // Can't add 'numeral' helper
-    Object.assign(stop, {
-      distancia: numeral(stop["distancia"]).format("0.[00]"),
-      servicios: _.sortBy(stop["servicios"], "cod"),
-    })
-  );
-
-  const latitude = location.latitude || location.lat;
-  const longitude = location.longitude || location.lng;
-
-  const pages = stops.chunk(config.get("PAGINATION:SIZE")).value(); // paginate
-  const current = 0;
-
-  ctx.data.stops = pages[current];
-  ctx.data.paging = {
-    total: stops.size(),
-    pages: pages.length,
-    current,
-  };
-
-  ctx.session.near = {
-    answer,
-    latitude,
-    longitude,
-    pages,
-    paging: ctx.data.paging,
-  };
-
-  const buttons = _(pages[current])
-    .map(stop => ({
-      [`:busstop: /${stop["cod"]}`]: { go: stop["cod"] },
-    }))
-    .chunk(2)
-    .value();
-
-  ctx.inlineKeyboard([
-    ...buttons,
-    [
-      current > 0 && {
-        "menu.back": { callbackData: { i: current - 1 } },
-      },
-      current < ctx.data.paging.pages - 1 && {
-        "menu.next": { callbackData: { i: current + 1 } },
-      },
-    ].filter(Boolean),
-  ]);
-
-  return await ctx.sendMessage("near.found", {
-    parse_mode: "Markdown",
-    reply_markup: { inline_keyboard: [[]] },
-  });
-}
-
-async function handleBusStop(ctx, id = undefined) {
-  id = id || ctx.command.name.toUpperCase().trim();
-
-  ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-  const response = await transantiago.getStop(id);
-
-  if (!response) {
-    ctx.data.name = id;
-    return await ctx.sendMessage("stop.notFound", { parse_mode: "Markdown" });
-  }
-
-  ctx.data.stop = response;
-  ctx.data.services = _(response["servicios"]["item"])
-    .sortBy("servicio")
-    .map(service =>
-      Object.assign(service, {
-        // TODO: do not depend on [1, 2]
-        buses: [1, 2].filter(n => service[`distanciabus${n}`]).map(n => ({
-          plate: service[`ppubus${n}`],
-          distance: numeral(service[`distanciabus${n}`]).divide(1000).format("0.[00]"),
-          time: service[`horaprediccionbus${n}`],
-        })),
-      })
-    )
-    .value();
-  const date = moment().format("HH:mm:ss");
-  const inline = [
-    [
-      {
-        [`:arrows_counterclockwise: Actualizar (${date})`]: { go: id },
-      },
-    ],
-  ];
-  if (response["x"] && response["y"]) {
-    inline.push([
-      {
-        "Mostrar en el mapa": { go: "paradero_posicion$invoke", args: [response["x"], response["y"]] },
-      },
-    ]);
-  }
-  ctx.inlineKeyboard(inline);
-
-  if (ctx.isRedirected) {
-    await ctx.updateText("stop.found", {
-      parse_mode: "Markdown",
-      // reply_markup: { inline_keyboard: [[]] },
-    });
-  } else {
-    await ctx.sendMessage("stop.found", {
-      parse_mode: "Markdown",
-      reply_markup: { inline_keyboard: [[]] },
-    });
-  }
-}
-
-async function handleBusTour(ctx, id = undefined) {
-  id = id || ctx.command.name.toUpperCase().trim();
-
-  ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-  const response = await transantiago.getTours(id);
-
-  if (!response) {
-    ctx.data.name = id;
-    return await ctx.sendMessage("tour.notFound", { parse_mode: "Markdown" });
-  }
-  const tours = response;
-
-  ctx.data.name = id;
-  ctx.data.tours = tours;
-
-  ctx.session.tour = {
-    tours,
-  };
-
-  ctx.inlineKeyboard(
-    tours.map((tour, index) => [
-      {
-        [`:checkered_flag: ${tour["destino"]}`]: { callbackData: { index, page: 0 } },
-      },
-    ])
-  );
-
-  return await ctx.sendMessage("tour.found", {
-    parse_mode: "Markdown",
-    reply_markup: { inline_keyboard: [[]] },
-  });
-}
-
 /**
  * /(BUS)
  * Example: /422 /D18
@@ -500,7 +413,38 @@ async function handleBusTour(ctx, id = undefined) {
  */
 bot
   .command(/^[a-zA-Z0-9]{1}[0-9]+/) // TODO: refine this
-  .invoke(handleBusTour)
+  .invoke(async ctx => {
+    const id = ctx.command.name.toUpperCase().trim();
+
+    ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
+    const response = await transantiago.getTours(id);
+
+    if (!response) {
+      ctx.data.name = id;
+      return await ctx.sendMessage("tour.notFound", { parse_mode: "Markdown" });
+    }
+    const tours = response;
+
+    ctx.data.name = id;
+    ctx.data.tours = tours;
+
+    ctx.session.tour = {
+      tours,
+    };
+
+    ctx.inlineKeyboard(
+      tours.map((tour, index) => [
+        {
+          [`:checkered_flag: ${tour["destino"]}`]: { callbackData: { index, page: 0 } },
+        },
+      ])
+    );
+
+    return await ctx.sendMessage("tour.found", {
+      parse_mode: "Markdown",
+      reply_markup: { inline_keyboard: [[]] },
+    });
+  })
   .callback(async ctx => {
     const { tour: { tours } } = ctx.session;
     const { index, page: current } = ctx.callbackData;
@@ -547,7 +491,64 @@ bot
  */
 bot
   .command(/^[a-zA-Z]{2}[0-9]+/) // Match first 2 alphabetic digits and the rest must be numbers.
-  .invoke(handleBusStop);
+  .invoke(handleBusStop)
+  .callback(handleBusStop);
+
+async function handleBusStop(ctx) {
+  const id = ctx.command.name.toUpperCase().trim();
+
+  ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
+  const response = await transantiago.getStop(id);
+
+  if (!response) {
+    ctx.data.name = id;
+    return await ctx.sendMessage("stop.notFound", { parse_mode: "Markdown" });
+  }
+
+  ctx.data.stop = response;
+  ctx.data.services = _(response["servicios"]["item"])
+    .sortBy("servicio")
+    .map(service =>
+      Object.assign(service, {
+        // TODO: do not depend on [1, 2]
+        buses: [1, 2].filter(n => service[`distanciabus${n}`]).map(n => ({
+          plate: service[`ppubus${n}`],
+          distance: numeral(service[`distanciabus${n}`]).divide(1000).format("0.[00]"),
+          time: service[`horaprediccionbus${n}`],
+        })),
+      })
+    )
+    .value();
+
+  const date = moment().format("HH:mm:ss");
+  const inline = [
+    [
+      {
+        [`:arrows_counterclockwise: Actualizar (${date})`]: { callbackData: {} },
+      },
+    ],
+  ];
+  if (response["x"] && response["y"]) {
+    inline.push([
+      {
+        "Mostrar en el mapa": { go: "paradero_posicion$invoke", args: [response["x"], response["y"]] },
+      },
+    ]);
+  }
+  ctx.inlineKeyboard(inline);
+
+  if (ctx.command.type === "callback") {
+    await ctx.updateText("stop.found", {
+      parse_mode: "Markdown",
+      // reply_markup: { inline_keyboard: [[]] },
+    });
+  } else {
+    await ctx.sendMessage("stop.found", {
+      parse_mode: "Markdown",
+      reply_markup: { inline_keyboard: [[]] },
+    });
+  }
+}
 
 // eslint-disable-next-line
 console.log(dedent`
