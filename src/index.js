@@ -7,7 +7,6 @@ const dedent = require("dedent");
 const numeral = require("numeral");
 const _ = require("lodash");
 const moment = require("moment");
-const truncate = require("unicode-byte-truncate");
 const fs = require("mz/fs");
 const path = require("path");
 
@@ -20,10 +19,6 @@ const GoogleMaps = require("./GoogleMapsAPI");
 const info = require("../package.json");
 
 const config = configuration();
-
-// TODO: Temporal fix. Add pagination.
-// See: https://core.telegram.org/method/messages.sendMessage#return-errors
-const MAX_BYTES = 4096;
 
 const transantiago = new Transantiago();
 const googleMaps = new GoogleMaps(config.get("GOOGLE:MAPS:KEY"));
@@ -282,7 +277,6 @@ bot
 /**
  * /cerca
  * Get near close bus stops.
- * TODO: allow typing an address.
  */
 bot
   .command("cerca")
@@ -435,21 +429,34 @@ async function handleBusStop(ctx, id = undefined) {
       })
     )
     .value();
-
+  const date = moment().format("HH:mm:ss");
+  const inline = [
+    [
+      {
+        [`:arrows_counterclockwise: Actualizar (${date})`]: { go: id },
+      },
+    ],
+  ];
   if (response["x"] && response["y"]) {
-    ctx.inlineKeyboard([
-      [
-        {
-          "Mostrar en el mapa": { go: "paradero_posicion$invoke", args: [response["x"], response["y"]] },
-        },
-      ],
+    inline.push([
+      {
+        "Mostrar en el mapa": { go: "paradero_posicion$invoke", args: [response["x"], response["y"]] },
+      },
     ]);
   }
+  ctx.inlineKeyboard(inline);
 
-  await ctx.sendMessage("stop.found", {
-    parse_mode: "Markdown",
-    reply_markup: { inline_keyboard: [[]] },
-  });
+  if (ctx.isRedirected) {
+    await ctx.updateText("stop.found", {
+      parse_mode: "Markdown",
+      // reply_markup: { inline_keyboard: [[]] },
+    });
+  } else {
+    await ctx.sendMessage("stop.found", {
+      parse_mode: "Markdown",
+      reply_markup: { inline_keyboard: [[]] },
+    });
+  }
 }
 
 async function handleBusTour(ctx, id = undefined) {
