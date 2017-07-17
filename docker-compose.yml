@@ -14,6 +14,7 @@ services:
       - redis
     environment:
       - NODE_ENV=production
+      - PORT=4000
       - REDIS__HOST=redis
       - REDIS__PORT=6379
       - URL
