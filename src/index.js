@@ -129,7 +129,7 @@ bot.texts({
       :bus: /<%= service["servicio"] %> → :question:
       <% } -%>
       <% service["buses"].forEach(bus => { -%>
-        ↳ \`<%= bus["plate"] %>\` _( km):_
+        ↳ \`<%= bus["plate"] %>\` _(<%= bus["distance"] %> km):_
              <%= bus["time"] %>
       <% }) -%>
       <% if (service["respuestaServicio"]) { -%>
