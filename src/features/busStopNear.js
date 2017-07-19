@@ -22,6 +22,7 @@ module.exports = function createFeature(bot, options) {
         Buscando cerca de <%= name %>...
       `,
       found: dedent`
+        <% if (stops.length > 0) { %>
         :information_desk_person: Encontré <%= paging.total %> paraderos ordenados por cercanía.
         :book: Mostrando página <%= paging.current + 1 %> de <%= paging.pages %>:
         <% stops.forEach(stop => { %>
@@ -31,6 +32,10 @@ module.exports = function createFeature(bot, options) {
           ↳ :bus: <%= service["cod"] %> <%= service["destino"] -%>
         <% }); %>
         <% }); %>
+        <% } else { %>
+        Lamentablemente no encontré paraderos cerca tuyo :disappointed:
+        Esto puede ser un error del Transantiago, mio o tuyo.
+        <% } %>
       `,
     },
   });
@@ -90,7 +95,7 @@ module.exports = function createFeature(bot, options) {
       const pages = stops.chunk(config.get("PAGINATION:SIZE")).value(); // paginate
       const current = 0;
 
-      ctx.data.stops = pages[current];
+      ctx.data.stops = pages[current] || [];
       ctx.data.paging = {
         total: stops.size(),
         pages: pages.length,
@@ -105,7 +110,7 @@ module.exports = function createFeature(bot, options) {
         paging: ctx.data.paging,
       };
 
-      const buttons = _(pages[current])
+      const buttons = _(pages[current] || [])
         .map(stop => ({
           [`:busstop: /${stop["cod"]}`]: { go: stop["cod"] },
         }))
@@ -133,12 +138,12 @@ module.exports = function createFeature(bot, options) {
       const { near: { pages, paging } } = ctx.session;
       const { i: current } = ctx.callbackData;
 
-      ctx.data.stops = pages[current];
+      ctx.data.stops = pages[current] || [];
       ctx.data.paging = Object.assign({}, paging, {
         current,
       });
 
-      const buttons = _(pages[current])
+      const buttons = _(pages[current] || [])
         .map(stop => ({
           [`:busstop: /${stop["cod"]}`]: { go: stop["cod"] },
         }))
