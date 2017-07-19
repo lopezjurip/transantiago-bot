@@ -22,12 +22,12 @@ module.exports = function createFeature(bot, options) {
         <% }); %>
         <% } else { %>
         *No tienes tarjetas guardadas hasta el momento.*
-        Presiona el botón de abajo para añadir tu primera tarjeta _BIP_ o _pase escolar_.
+        Presiona el botón de abajo para añadir tu primera tarjeta _bip!_ o _pase escolar_.
         <% } %>
       `,
       add: {
         ask: dedent`
-          *Escríbeme el número de 8 dígitos* de la tarjeta BIP o pase escolar.
+          *Escríbeme el número de 8 dígitos* de la tarjeta _bip!_ o _pase escolar_.
           Para salir, escribe /cancelar.
 
           :bulb: Te mandaré un ejemplo.
@@ -59,7 +59,7 @@ module.exports = function createFeature(bot, options) {
       },
       state: {
         ask: dedent`
-          *Escríbeme el número de 8 dígitos* de la tarjeta BIP o pase escolar.
+          *Escríbeme el número de 8 dígitos* de la tarjeta _bip!_ o _pase escolar_.
           Para salir, escribe /cancelar.
 
           :bulb: Te mandaré un ejemplo.
