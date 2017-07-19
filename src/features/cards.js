@@ -13,7 +13,7 @@ module.exports = function createFeature(bot, options) {
   bot.texts({
     cards: {
       list: dedent`
-        <%if (cards.length > 0) { %>
+        <% if (cards.length > 0) { %>
         *Mis tarjetas:*
         <% cards.forEach(card => { %>
         :ticket: Tarjeta: \`<%= card["id"] %>\`
@@ -45,7 +45,7 @@ module.exports = function createFeature(bot, options) {
       },
       remove: {
         ask: dedent`
-          <%if (cards.length > 0) { %>
+          <% if (cards.length > 0) { %>
           *¿Qué tarjeta quieres borrar de tu cuenta?*
           <% cards.forEach(card => { %>
           :ticket: Tarjeta: \`<%= card["id"] %>\`
