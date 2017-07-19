@@ -27,7 +27,7 @@ module.exports = function createFeature(bot, options) {
         :bus: /<%= service["servicio"] %> → :question:
         <% } -%>
         <% service["buses"].forEach(bus => { -%>
-          ↳ \`<%= bus["plate"] %>\` _(<%= bus["distance"] %> km):_
+          ↳ \`<%= bus["plate"] %>\` _(<%= bus["distanceDisplay"] %> km):_
                <%= bus["time"] %>
         <% }) -%>
         <% if (service["respuestaServicio"]) { -%>
@@ -100,12 +100,17 @@ module.exports = function createFeature(bot, options) {
       .sortBy("servicio")
       .map(service =>
         Object.assign(service, {
-          // TODO: do not depend on [1, 2]
-          buses: [1, 2].filter(n => service[`distanciabus${n}`]).map(n => ({
-            plate: service[`ppubus${n}`],
-            distance: numeral(service[`distanciabus${n}`]).divide(1000).format("0.[00]"),
-            time: service[`horaprediccionbus${n}`],
-          })),
+          // TODO: do not depend on [1, 2, ...]
+          buses: _([0, 1, 2, 3, 4])
+            .filter(n => service[`ppubus${n}`])
+            .map(n => ({
+              plate: service[`ppubus${n}`],
+              distance: numeral(service[`distanciabus${n}`]),
+              distanceDisplay: numeral(service[`distanciabus${n}`]).divide(1000).format("0.[00]"),
+              time: service[`horaprediccionbus${n}`],
+            }))
+            .sortBy("distance")
+            .value(),
         })
       )
       .value();
