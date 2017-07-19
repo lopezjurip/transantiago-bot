@@ -2,5 +2,7 @@ start - Iniciar este maravilloso bot
 cerca - Muestra paraderos cerca tuyo si nos mandas tu ubicación
 paradero - Información de un paradero en particular
 recorrido - Obtener un recorrido completo
+mis_tarjetas - Gestionar y consultar por tus tarjetas.
+saldo - Obtener el saldo de una tarjeta BIP o pase escolar.
 about - Información de este bot
 help - ¿No sabes cómo funciono?
