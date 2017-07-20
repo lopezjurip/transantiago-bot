@@ -4,7 +4,7 @@ const moment = require("moment");
 const numeral = require("numeral");
 
 module.exports = function createFeature(bot, options) {
-  const { transantiago } = options;
+  const { transantiago, googleMaps } = options;
 
   bot.texts({
     stop: {
@@ -123,10 +123,21 @@ module.exports = function createFeature(bot, options) {
         },
       ],
     ];
-    if (response["x"] && response["y"]) {
+
+    let x = _.toNumber(response["x"]);
+    let y = _.toNumber(response["y"]);
+    if (!(x && y)) {
+      const query = response["nomett"];
+      const results = await googleMaps.getPlacesByAddress(query);
+      const location = _.get(results, [0, "geometry", "location"], {});
+      x = location.lat;
+      y = location.lng;
+    }
+
+    if (x && y) {
       inline.push([
         {
-          "Mostrar en el mapa": { go: "paradero_posicion$invoke", args: [response["x"], response["y"]] },
+          "Mostrar en el mapa": { go: "paradero_posicion$invoke", args: [x, y] },
         },
       ]);
     }
