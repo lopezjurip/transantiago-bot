@@ -70,10 +70,17 @@ module.exports = function createBot(options) {
   });
 
   bot.command(/.*/).use("before", async ctx => {
-    const { name, args } = ctx.command;
-    const date = moment().format("YYYY/MM/DD HH:mm:ss");
     // eslint-disable-next-line
-    console.log(date, `@${ctx.meta.user.username} (${ctx.meta.user.language_code}):`, `/${name} ${args}`);
+    console.log(dedent`
+      ${moment().format("YYYY/MM/DD HH:mm:ss")}
+      USER: ${JSON.stringify(ctx.meta.user)}
+      CHAT: ${JSON.stringify(ctx.meta.chat)}
+      FROM: ${JSON.stringify(ctx.meta.from)}
+      CMD: ${JSON.stringify(ctx.command)}
+      ANSWER: ${JSON.stringify(ctx.answer)}
+      CALLBACK: ${JSON.stringify(ctx.callbackData)}
+      ---
+    `);
   });
 
   /**

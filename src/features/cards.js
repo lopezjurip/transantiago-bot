@@ -202,12 +202,5 @@ module.exports = function createFeature(bot, options) {
       return await ctx.sendMessage("cards.state.response", { parse_mode: "Markdown" });
     });
 
-  bot.command(/.*/).use("before", async ctx => {
-    const { name, args } = ctx.command;
-    const date = moment().format("YYYY/MM/DD HH:mm:ss");
-    // eslint-disable-next-line
-    console.log(date, `@${ctx.meta.user.username} (${ctx.meta.user.language_code}):`, `/${name} ${args}`);
-  });
-
   return bot;
 };

@@ -135,9 +135,10 @@ module.exports = function createFeature(bot, options) {
     }
 
     if (x && y) {
+      const args = [x, y].map(number => number.toPrecision(10));
       inline.push([
         {
-          "Mostrar en el mapa": { go: "paradero_posicion$invoke", args: [x, y] },
+          "Mostrar en el mapa": { go: "paradero_posicion$invoke", args },
         },
       ]);
     }
