@@ -42,6 +42,9 @@ module.exports = function configuration(subtree = null) {
     file: fromJSON("default"),
   });
 
+  // Set URL
+  config.set("URL", config.get("APP_URL") || config.get("NOW_URL") || config.get("URL"));
+
   // Throw error if missing
   config.required(["URL", "TELEGRAM:TOKEN", "GOOGLE:MAPS:KEY"]);
 

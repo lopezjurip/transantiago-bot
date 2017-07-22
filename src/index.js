@@ -1,35 +1,25 @@
-/* eslint no-console:0 no-unused-vars:0 */
-
 "use strict";
 
-const bb = require("bot-brother");
-const redis = require("redis");
-const Bluebird = require("bluebird");
 const dedent = require("dedent");
 const _ = require("lodash");
 const moment = require("moment");
 
-Bluebird.promisifyAll(redis.RedisClient.prototype);
-Bluebird.promisifyAll(redis.Multi.prototype);
-
-const configuration = require("./configuration");
 const Transantiago = require("./api/Transantiago");
 const GoogleMaps = require("./api/GoogleMaps");
 const BIP = require("./api/BIP");
-const info = require("../package.json");
 const createBot = require("./bot");
+const createSessionManager = require("./manager");
+const configuration = require("./configuration");
+const info = require("../package.json");
 
 const config = configuration();
 
+const manager = createSessionManager(config);
 const transantiago = new Transantiago();
 const googleMaps = new GoogleMaps(config.get("GOOGLE:MAPS:KEY"));
 const bip = new BIP();
-const client = redis.createClient({
-  port: config.get("REDIS:PORT"),
-  host: config.get("REDIS:HOST"),
-});
-const manager = bb.sessionManager.redis({ client });
 
+// eslint-disable-next-line no-unused-vars
 const bot = createBot({
   manager,
   config,
@@ -39,6 +29,7 @@ const bot = createBot({
   info,
 });
 
+// eslint-disable-next-line no-console
 console.log(dedent`
   Bot Started with:
   - NODE_ENV: ${config.get("NODE_ENV")}

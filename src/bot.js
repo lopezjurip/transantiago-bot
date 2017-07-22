@@ -70,7 +70,7 @@ module.exports = function createBot(options) {
   });
 
   bot.command(/.*/).use("before", async ctx => {
-    // eslint-disable-next-line
+    // eslint-disable-next-line no-console
     console.log(dedent`
       ${moment().format("YYYY/MM/DD HH:mm:ss")}
       USER: ${JSON.stringify(ctx.meta.user)}
