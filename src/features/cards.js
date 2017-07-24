@@ -68,9 +68,9 @@ module.exports = function createFeature(bot, options) {
           :bulb: Si quieres guardar o consultar por tus tarjetas lo puedes hacer desde /mis\_tarjetas.
         `,
         response: dedent`
-          <%= card["id"] %>
-          <%= card["balance"] %>
-          <%= card["date"] %>
+          :ticket: Tarjeta: \`<%= card["id"] %>\`
+          :money_with_wings: Saldo: *<%= card["balance"] %> CLP*
+          :calendar: Actualizado: <%= card["date"] %>
 
           :bulb: Recuerda que puedes guardar tarjetas desde /mis\_tarjetas.
         `,
