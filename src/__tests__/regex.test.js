@@ -3,7 +3,7 @@ const expresions = require("../features/util/regex");
 
 const STOPS = [];
 const TOURS = require("./data/tours.json") || [];
-const MIXED = product(STOPS, TOURS).map(tuple => tuple.join("_"));
+const MIXED = product(STOPS, TOURS).map(tuple => tuple.join("_")).filter(Boolean);
 
 describe("regex", () => {
   it("matches", () => {

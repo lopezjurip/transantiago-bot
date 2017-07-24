@@ -19,11 +19,18 @@
     "email": "patricio@lopezjuri.com",
     "name": "Patricio López Juri",
     "url": "https://lopezjuri.com",
-    "telegram": "mrpatiwi",
+    "username": "mrpatiwi",
     "btc": "3KDbM5Y9UcHeuN5innf83gxxxiStxZ8WdE",
     "eth": "0xcc3321cCF07Ab2F8b2E29f7dE9925762A2A3b33d",
     "paypal": "https://goo.gl/ipPse8"
   },
+  "contributors": [
+    {
+      "name": "Carlos Molina",
+      "email": "ing.cmolina@gmail.com",
+      "username": "camolin3"
+    }
+  ],
   "license": "MIT",
   "dependencies": {
     "axios": "^0.16.2",

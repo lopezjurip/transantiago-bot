@@ -1,6 +1,8 @@
 const dedent = require("dedent");
 const _ = require("lodash");
 
+const expresions = require("./util/regex");
+
 module.exports = function createFeature(bot, options) {
   const { transantiago, config } = options;
 
@@ -68,10 +70,9 @@ module.exports = function createFeature(bot, options) {
      * /(BUS)
      * Example: /422 /D18
      * Get bus complete tour.
-     * TODO: check regex and paginate long responses.
      */
   bot
-    .command(/^[a-zA-Z0-9]{1}[0-9]+/) // TODO: refine this
+    .command(expresions.tours)
     .invoke(async ctx => {
       const id = ctx.command.name.toUpperCase().trim();
 
