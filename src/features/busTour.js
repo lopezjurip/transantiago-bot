@@ -76,7 +76,7 @@ module.exports = function createFeature(bot, options) {
       const id = ctx.command.name.toUpperCase().trim();
 
       ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-      const response = await transantiago.getTours(id);
+      const response = await transantiago.getTour(id);
 
       if (!response) {
         ctx.data.name = id;

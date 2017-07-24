@@ -1,14 +1,18 @@
 const axios = require("axios");
 
 class TransantiagoAPI {
-  constructor() {
-    this.client = axios.create({
-      baseURL: "http://www.transantiago.cl/",
-      timeout: 3000,
-    });
+  constructor(options = {}) {
+    this.options = Object.assign(
+      {
+        baseURL: "http://www.transantiago.cl/",
+        timeout: 3000,
+      },
+      options
+    );
+    this.client = axios.create(this.options);
   }
 
-  async getStops(coordinates = {}) {
+  async getStopsNear(coordinates = {}) {
     const latitude = coordinates.latitude || coordinates.lat;
     const longitude = coordinates.longitude || coordinates.lng;
     try {
@@ -27,9 +31,20 @@ class TransantiagoAPI {
     return data;
   }
 
-  // See: http://www.transantiago.cl/restservice/rest/getservicios/all
-  async getTours(tour) {
+  async getTour(tour) {
     const { data } = await this.client.get(`/restservice/rest/getrecorrido/${tour}`);
+    return data;
+  }
+
+  // See: http://www.transantiago.cl/restservice/rest/getservicios/all
+  async getTours() {
+    const { data } = await this.client.get(`/restservice/rest/getrecorrido/all`);
+    return data;
+  }
+
+  // See: http://www.transantiago.cl/restservice/rest/getservicios/all
+  async getStops() {
+    const { data } = await this.client.get(`/restservice/rest/getparadas/all`);
     return data;
   }
 }

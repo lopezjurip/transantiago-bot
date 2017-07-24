@@ -41,6 +41,7 @@
     "unicode-byte-truncate": "^1.0.0"
   },
   "devDependencies": {
+    "cartesian-product": "^2.1.2",
     "eslint": "^4.3.0",
     "eslint-config-prettier": "^2.1.1",
     "eslint-plugin-prettier": "^2.1.1",
