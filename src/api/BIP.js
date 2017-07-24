@@ -32,8 +32,8 @@ class BIPAPI {
       return {
         id: card["tarjeta"],
         balance: card["saldo"],
-        card: card["fecha"],
-        moment: moment(card["fecha"], "DD/MM/YYYY HH:mm").toDate(),
+        date: card["fecha"],
+        moment: moment(card["fecha"], "DD/MM/YYYY HH:mm"),
       };
     }
   }
