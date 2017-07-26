@@ -49,7 +49,7 @@ module.exports = function createBot(options) {
        • <%= info.author.name %>
        • <%= info.author.email %>
        • <%= info.author.url %>
-       • @<%= info.author.telegram %>
+       • @<%= info.author.username %>
 
       :pray: *Ayúdame a mantener esto con alguna donación:*
       - PayPal:

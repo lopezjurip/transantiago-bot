@@ -62,7 +62,7 @@ module.exports = function createFeature(bot, options) {
       if (answer && !location) {
         ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
         const results = await googleMaps.getPlacesByAddress(answer);
-        if (results.length === 0) {
+        if (_.isEmpty(results)) {
           ctx.data.name = answer;
           return await ctx.sendMessage("near.notFound", { parse_mode: "Markdown" });
         }
@@ -80,7 +80,7 @@ module.exports = function createFeature(bot, options) {
       await ctx.sendMessage("near.finding", { parse_mode: "Markdown" });
 
       ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-      const response = await transantiago.getStops(location);
+      const response = await transantiago.getStopsNear(location);
       const stops = _(response).filter("cod").sortBy("distancia").map(stop =>
         // Can't add 'numeral' helper
         Object.assign(stop, {

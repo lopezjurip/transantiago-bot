@@ -490,6 +490,10 @@ camelcase@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-3.0.0.tgz#32fc4b9fcdaf845fcdf7e73bb97cac2261f0ab0a"
 
+cartesian-product@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/cartesian-product/-/cartesian-product-2.1.2.tgz#c9a8462c54ab19a0c5fd32192922e239ab4ca4fd"
+
 caseless@~0.10.0:
   version "0.10.0"
   resolved "https://registry.yarnpkg.com/caseless/-/caseless-0.10.0.tgz#ed6b2719adcd1fd18f58dc081c0f1a5b43963909"

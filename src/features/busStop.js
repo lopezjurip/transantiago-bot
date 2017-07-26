@@ -3,6 +3,8 @@ const _ = require("lodash");
 const moment = require("moment");
 const numeral = require("numeral");
 
+const expresions = require("./util/regex");
+
 module.exports = function createFeature(bot, options) {
   const { transantiago, googleMaps } = options;
 
@@ -45,7 +47,7 @@ module.exports = function createFeature(bot, options) {
   bot
     .command("paradero")
     .invoke(async ctx => {
-      if (ctx.command.args.length === 0) {
+      if (_.isEmpty(ctx.command.args)) {
         ctx.data.example = "PA692";
         return await ctx.sendMessage("stop.ask", { parse_mode: "Markdown" });
       } else {
@@ -54,7 +56,7 @@ module.exports = function createFeature(bot, options) {
       }
     })
     .answer(async ctx => {
-      if (!ctx.answer) {
+      if (_.isEmpty(ctx.answer)) {
         return await ctx.repeat();
       } else {
         const command = ctx.answer.toUpperCase();
@@ -77,12 +79,8 @@ module.exports = function createFeature(bot, options) {
    * /(BUS_STOP)
    * Example: /PA692
    * Get buses and their plate and time.
-   * TODO: check regex.
    */
-  bot
-    .command(/^[a-zA-Z]{2}[0-9]+/) // Match first 2 alphabetic digits and the rest must be numbers.
-    .invoke(handleBusStop)
-    .callback(handleBusStop);
+  bot.command(expresions.stops).invoke(handleBusStop).callback(handleBusStop);
 
   async function handleBusStop(ctx) {
     const id = ctx.command.name.toUpperCase().trim();
@@ -90,7 +88,7 @@ module.exports = function createFeature(bot, options) {
     ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
     const response = await transantiago.getStop(id);
 
-    if (!response) {
+    if (_.isEmpty(response)) {
       ctx.data.name = id;
       return await ctx.sendMessage("stop.notFound", { parse_mode: "Markdown" });
     }

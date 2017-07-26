@@ -1,6 +1,25 @@
 const dedent = require("dedent");
 const _ = require("lodash");
 
+const expresions = require("./util/regex");
+
+// Blame tour `301c`.
+// TODO: have a matching list?
+function toUpperCaseUntilNumberic(input) {
+  let numberFound = false;
+  return String(input)
+    .split("")
+    .map(char => {
+      if (numberFound) {
+        return char.toLowerCase();
+      } else {
+        numberFound = true;
+        return char.toUpperCase();
+      }
+    })
+    .join("");
+}
+
 module.exports = function createFeature(bot, options) {
   const { transantiago, config } = options;
 
@@ -47,7 +66,7 @@ module.exports = function createFeature(bot, options) {
   bot
     .command("recorrido")
     .invoke(async ctx => {
-      if (ctx.command.args.length === 0) {
+      if (_.isEmpty(ctx.command.args)) {
         ctx.data.example = "422";
         return await ctx.sendMessage("tour.ask", { parse_mode: "Markdown" });
       } else {
@@ -56,7 +75,7 @@ module.exports = function createFeature(bot, options) {
       }
     })
     .answer(async ctx => {
-      if (!ctx.answer) {
+      if (_.isEmpty(ctx.answer)) {
         return await ctx.repeat();
       } else {
         const command = ctx.answer.toUpperCase();
@@ -68,17 +87,16 @@ module.exports = function createFeature(bot, options) {
      * /(BUS)
      * Example: /422 /D18
      * Get bus complete tour.
-     * TODO: check regex and paginate long responses.
      */
   bot
-    .command(/^[a-zA-Z0-9]{1}[0-9]+/) // TODO: refine this
+    .command(expresions.tours)
     .invoke(async ctx => {
-      const id = ctx.command.name.toUpperCase().trim();
+      const id = toUpperCaseUntilNumberic(ctx.command.name.trim());
 
       ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-      const response = await transantiago.getTours(id);
+      const response = await transantiago.getTour(id);
 
-      if (!response) {
+      if (_.isEmpty(response)) {
         ctx.data.name = id;
         return await ctx.sendMessage("tour.notFound", { parse_mode: "Markdown" });
       }
