@@ -62,7 +62,7 @@ module.exports = function createFeature(bot, options) {
       if (answer && !location) {
         ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
         const results = await googleMaps.getPlacesByAddress(answer);
-        if (results.length === 0) {
+        if (_.isEmpty(results)) {
           ctx.data.name = answer;
           return await ctx.sendMessage("near.notFound", { parse_mode: "Markdown" });
         }

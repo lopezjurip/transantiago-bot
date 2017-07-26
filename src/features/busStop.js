@@ -47,7 +47,7 @@ module.exports = function createFeature(bot, options) {
   bot
     .command("paradero")
     .invoke(async ctx => {
-      if (ctx.command.args.length === 0) {
+      if (_.isEmpty(ctx.command.args)) {
         ctx.data.example = "PA692";
         return await ctx.sendMessage("stop.ask", { parse_mode: "Markdown" });
       } else {
@@ -56,7 +56,7 @@ module.exports = function createFeature(bot, options) {
       }
     })
     .answer(async ctx => {
-      if (!ctx.answer) {
+      if (_.isEmpty(ctx.answer)) {
         return await ctx.repeat();
       } else {
         const command = ctx.answer.toUpperCase();
@@ -88,7 +88,7 @@ module.exports = function createFeature(bot, options) {
     ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
     const response = await transantiago.getStop(id);
 
-    if (!response) {
+    if (_.isEmpty(response)) {
       ctx.data.name = id;
       return await ctx.sendMessage("stop.notFound", { parse_mode: "Markdown" });
     }
