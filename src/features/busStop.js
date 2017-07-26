@@ -133,7 +133,7 @@ module.exports = function createFeature(bot, options) {
 
     let x = _.toNumber(response["x"]);
     let y = _.toNumber(response["y"]);
-    if (!(x && y)) {
+    if (!_.isFinite(x) || !_.isFinite(y)) {
       const query = response["nomett"];
       const results = await googleMaps.getPlacesByAddress(query);
       const location = _.get(results, [0, "geometry", "location"], {});
@@ -141,7 +141,7 @@ module.exports = function createFeature(bot, options) {
       y = location.lng;
     }
 
-    if (x && y) {
+    if (_.isFinite(x) && _.isFinite(y)) {
       const args = [x, y].map(number => number.toPrecision(10));
       inline.push([
         {
