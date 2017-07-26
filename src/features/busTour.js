@@ -2,23 +2,7 @@ const dedent = require("dedent");
 const _ = require("lodash");
 
 const expresions = require("./util/regex");
-
-// Blame tour `301c`.
-// TODO: have a matching list?
-function toUpperCaseUntilNumberic(input) {
-  let numberFound = false;
-  return String(input)
-    .split("")
-    .map(char => {
-      if (numberFound) {
-        return char.toLowerCase();
-      } else {
-        numberFound = true;
-        return char.toUpperCase();
-      }
-    })
-    .join("");
-}
+const strings = require("./util/strings");
 
 module.exports = function createFeature(bot, options) {
   const { transantiago, config } = options;
@@ -91,7 +75,7 @@ module.exports = function createFeature(bot, options) {
   bot
     .command(expresions.tours)
     .invoke(async ctx => {
-      const id = toUpperCaseUntilNumberic(ctx.command.name.trim());
+      const id = strings.toUpperCaseUntilNumberic(ctx.command.name.trim());
 
       ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
       const response = await transantiago.getTour(id);

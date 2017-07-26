@@ -4,6 +4,7 @@ const moment = require("moment");
 const numeral = require("numeral");
 
 const expresions = require("./util/regex");
+const strings = require("./util/strings");
 
 module.exports = function createFeature(bot, options) {
   const { transantiago, googleMaps } = options;
@@ -22,18 +23,19 @@ module.exports = function createFeature(bot, options) {
         :busstop: *Paradero <%= stop["paradero"] %>*
         <%= stop["nomett"] %>
         _Actualizado: <%= stop["horaprediccion"] -%>_
-        <% services.forEach(service => { -%>
-        <% if (service["destino"]) { %>
-        :bus: /<%= service["servicio"] %> → <%= service["destino"] %>
+        <% services.forEach(service => { %>
+          ↱ /<%= stop["paradero"] %>\_<%= service["servicio"] %>
+        <% if (service["destino"]) { -%>
+        :bus: *<%= service["servicio"] %>* → <%= service["destino"] %>
         <% } else { -%>
-        :bus: /<%= service["servicio"] %> → :question:
+        :bus: *<%= service["servicio"] %>* → :question:
         <% } -%>
         <% service["buses"].forEach(bus => { -%>
           ↳ \`<%= bus["plate"] %>\` _(<%= bus["distanceDisplay"] %> km):_
                <%= bus["time"] %>
         <% }) -%>
         <% if (service["respuestaServicio"]) { -%>
-        <%= service["respuestaServicio"] %>
+        _<%= service["respuestaServicio"] -%>_
         <% } -%>
         <% }); %>
       `,
@@ -82,14 +84,21 @@ module.exports = function createFeature(bot, options) {
    */
   bot.command(expresions.stops).invoke(handleBusStop).callback(handleBusStop);
 
+  /**
+   * /(BUS_STOP)_(BUS_TOUR)
+   * Example: /PA692_518 /PG13_301C2
+   * Get buses and their plate and time.
+   */
+  bot.command(expresions.mixed).invoke(handleBusStop).callback(handleBusStop);
+
   async function handleBusStop(ctx) {
-    const id = ctx.command.name.toUpperCase().trim();
+    const [stop, service] = ctx.command.name.trim().split("_").map(strings.toUpperCaseUntilNumberic);
 
     ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
-    const response = await transantiago.getStop(id);
+    const response = await transantiago.getStop(stop, service); // service can be undefined, this case brings all the tours.
 
     if (_.isEmpty(response)) {
-      ctx.data.name = id;
+      ctx.data.name = stop;
       return await ctx.sendMessage("stop.notFound", { parse_mode: "Markdown" });
     }
 
