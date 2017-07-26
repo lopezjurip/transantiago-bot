@@ -36,13 +36,11 @@ class TransantiagoAPI {
     return data;
   }
 
-  // See: http://www.transantiago.cl/restservice/rest/getservicios/all
   async getTours() {
-    const { data } = await this.client.get(`/restservice/rest/getrecorrido/all`);
+    const { data } = await this.client.get(`/restservice/rest/getservicios/all`);
     return data;
   }
 
-  // See: http://www.transantiago.cl/restservice/rest/getservicios/all
   async getStops() {
     const { data } = await this.client.get(`/restservice/rest/getparadas/all`);
     return data;
