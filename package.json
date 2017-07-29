@@ -8,6 +8,11 @@
     "lint": "eslint .",
     "test": "jest"
   },
+  "files": [
+    "src",
+    "docs",
+    "config"
+  ],
   "engines": {
     "node": ">=8.0.0"
   },

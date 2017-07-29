@@ -1,0 +1,6 @@
+Bot para ayudarte a moverte por Santiago usando los datos disponibles del Transantiago 🇨🇱.
+
+🚦 Consulta algún /paradero y también tu /recorrido diario.
+¿Estás perdido? Pregunta cuáles paraderos tienes /cerca.
+
+Finalmente, puedes guardar /mis_tarjetas bip! o pases escolares y podré decirte cuánto te queda de saldo 💰

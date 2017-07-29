@@ -36,5 +36,6 @@ console.log(dedent`
   - URL: ${config.get("URL")}
   - PORT: ${config.get("PORT")}
   - TOKEN: ${_.fill([...config.get("TELEGRAM:TOKEN")], "*", 0, -5).join("")}
+  - SESSION: ${config.get("SESSION")}
   - STARTED: ${moment().format()}
 `);

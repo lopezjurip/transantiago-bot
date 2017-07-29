@@ -1,8 +1,9 @@
-start - Iniciar este maravilloso bot
-cerca - Muestra paraderos cerca tuyo si nos mandas tu ubicación
-paradero - Información de un paradero en particular
-recorrido - Obtener un recorrido completo
+start - Iniciar este maravilloso bot.
+cerca - Muestra paraderos cerca tuyo si nos mandas tu ubicación.
+paradero - Información de un paradero en particular.
+recorrido - Obtener un recorrido completo.
 mis_tarjetas - Gestionar y consultar por tus tarjetas.
 saldo - Obtener el saldo de una tarjeta bip! o pase escolar.
-about - Información de este bot
+about - Información de este bot.
+cancelar - Cancela la acción actual.
 help - ¿No sabes cómo funciono?
