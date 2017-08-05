@@ -15,7 +15,7 @@ class GoogleMapsAPI {
     this.key = key; // API KEY
     this.client = axios.create({
       baseURL: "https://maps.googleapis.com/maps/api/",
-      timeout: 3000,
+      timeout: 5000,
     });
   }
 
@@ -27,7 +27,10 @@ class GoogleMapsAPI {
       latlng: [latitude, longitude].join(","),
     };
     const { data } = await this.client.get("geocode/json", { params });
-    return data.results || [];
+    if (data["status"] === "OVER_QUERY_LIMIT") {
+      console.warn(data["message"]);
+    }
+    return data["results"] || [];
   }
 
   async getPlacesByAddress(address = "") {
@@ -40,7 +43,10 @@ class GoogleMapsAPI {
       address,
     };
     const { data } = await this.client.get("geocode/json", { params });
-    return data.results || [];
+    if (data["status"] === "OVER_QUERY_LIMIT") {
+      console.warn(data["message"]);
+    }
+    return data["results"] || [];
   }
 }
 

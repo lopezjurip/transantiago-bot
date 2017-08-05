@@ -5,7 +5,7 @@ class TransantiagoAPI {
     this.options = Object.assign(
       {
         baseURL: "http://www.transantiago.cl/",
-        timeout: 3000,
+        timeout: 5000,
       },
       options
     );
