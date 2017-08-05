@@ -12,11 +12,16 @@ services:
       - 4000:4000
     depends_on:
       - redis
+    volumes:
+      - ./logs:/usr/src/app/logs
     environment:
       - NODE_ENV=production
       - PORT=4000
       - REDIS__HOST=redis
       - REDIS__PORT=6379
+      - LOG__LEVEL=info
+      - LOG__DIR=logs
+      - LOG__EXCEPTIONS=true
       - URL
       - TELEGRAM__TOKEN
       - GOOGLE__MAPS__KEY

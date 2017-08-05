@@ -7,6 +7,11 @@
   "PAGINATION": {
     "SIZE": 4
   },
+  "LOG": {
+    "LEVEL": "debug",
+    "DIR": "logs",
+    "EXCEPTIONS": false
+  },
   "SESSION": "REDIS",
   "REDIS": {
     "HOST": "127.0.0.1",

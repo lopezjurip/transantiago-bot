@@ -15,6 +15,10 @@ RUN yarn install --pure-lockfile
 # Bundle app source
 COPY . /usr/src/app
 
+# Create volume for logs
+RUN mkdir -p /usr/src/app/logs
+VOLUME /usr/src/app/logs
+
 EXPOSE 4000
 
 CMD ["yarn", "start"]

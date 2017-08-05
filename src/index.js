@@ -10,10 +10,12 @@ const BIP = require("./api/BIP");
 const createBot = require("./bot");
 const createSessionManager = require("./manager");
 const configuration = require("./configuration");
+const createLogger = require("./logger");
 const info = require("../package.json");
 
 const config = configuration();
 
+const logger = createLogger(config);
 const manager = createSessionManager(config);
 const transantiago = new Transantiago();
 const googleMaps = new GoogleMaps(config.get("GOOGLE:MAPS:KEY"));
@@ -26,6 +28,7 @@ const bot = createBot({
   transantiago,
   googleMaps,
   bip,
+  logger,
   info,
 });
 
