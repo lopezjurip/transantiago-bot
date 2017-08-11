@@ -2,7 +2,6 @@
 
 const bb = require("bot-brother");
 const dedent = require("dedent");
-const moment = require("moment");
 const fs = require("mz/fs");
 const path = require("path");
 
@@ -38,27 +37,30 @@ module.exports = function createBot(options) {
       /<%= command -%>
       <% }); -%>
     `,
-    about: dedent`
-      *<%= info.name %> (<%= info.version %>)*
-      *Licencia:* <%= info.license %>
-      *Repositorio:* <%= info.repository.url %>
+    about: {
+      info: dedent`
+        *<%= info.name %> (<%= info.version %>)*
+        *Licencia:* <%= info.license %>
+        *Repositorio:* <%= info.repository.url %>
 
-      Este bot es _no-oficial_ y no guarda relación con el Transantiago ni el Ministerio de Transportes.
+        Este bot es _no-oficial_ y no guarda relación con el Transantiago ni el Ministerio de Transportes.
 
-      :bust_in_silhouette: *Autor:*
-       • <%= info.author.name %>
-       • <%= info.author.email %>
-       • <%= info.author.url %>
-       • @<%= info.author.username %>
-
-      :pray: *Ayúdame a mantener esto con alguna donación:*
-      - PayPal:
-        <%= info.author.paypal %>
-      - Bitcoin:
-        \`<%= info.author.btc %>\`
-      - Ether:
-        \`<%= info.author.eth %>\`
-    `,
+        :bust_in_silhouette: *Autor:*
+        • <%= info.author.name %>
+        • <%= info.author.email %>
+        • <%= info.author.url %>
+        • @<%= info.author.username %>
+      `,
+      donations: dedent`
+        :pray: *Ayúdame a mantener esto con alguna donación:*
+        - PayPal:
+          <%= info.author.paypal %>
+        - Bitcoin:
+          \`<%= info.author.btc %>\`
+        - Ether:
+          \`<%= info.author.eth %>\`
+      `,
+    },
     cancel: dedent`
       OK, dejaré de hacer lo que estaba haciendo.
       ¿Necesitas ayuda? Escribe /help.
@@ -105,7 +107,8 @@ module.exports = function createBot(options) {
    */
   bot.command("about").invoke(async ctx => {
     ctx.data.info = info;
-    await ctx.sendMessage("about", { parse_mode: "Markdown" });
+    await ctx.sendMessage("about.info", { parse_mode: "Markdown" });
+    await ctx.sendMessage("about.donations", { parse_mode: "Markdown" });
   });
 
   /**
