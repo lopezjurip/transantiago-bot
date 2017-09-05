@@ -81,13 +81,16 @@ module.exports = function createFeature(bot, options) {
 
       ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
       const response = await transantiago.getStopsNear(location);
-      const stops = _(response).filter("cod").sortBy("distancia").map(stop =>
-        // Can't add 'numeral' helper
-        Object.assign(stop, {
-          distancia: numeral(stop["distancia"]).format("0.[00]"),
-          servicios: _.sortBy(stop["servicios"], "cod"),
-        })
-      );
+      const stops = _(response)
+        .filter("cod")
+        .sortBy("distancia")
+        .map(stop =>
+          // Can't add 'numeral' helper
+          Object.assign(stop, {
+            distancia: numeral(stop["distancia"]).format("0.[00]"),
+            servicios: _.sortBy(stop["servicios"], "cod"),
+          })
+        );
 
       const latitude = location.latitude || location.lat;
       const longitude = location.longitude || location.lng;

@@ -21,7 +21,7 @@ module.exports = function configuration(subtree = null) {
 
   const config = new nconf.Provider({ separator: SEPARATOR });
 
-  // Priorize cli arguments and then enviorement.
+  // Priorize cli arguments and then environment.
   config.argv().env("__");
 
   // Sane defaults
@@ -30,11 +30,11 @@ module.exports = function configuration(subtree = null) {
   });
 
   // Check and set NODE_ENV
-  const enviorement = config.get("NODE_ENV");
+  const environment = config.get("NODE_ENV");
 
-  // Load from enviorement file
-  config.file("enviorement", {
-    file: fromJSON(enviorement),
+  // Load from environment file
+  config.file("environment", {
+    file: fromJSON(environment),
   });
 
   // Default fallback

@@ -110,11 +110,14 @@ module.exports = function createFeature(bot, options) {
       const { tour: { tours } } = ctx.session;
       const { index, page: current } = ctx.callbackData;
       const tour = tours[index];
-      const stops = _(tour["paradas"]).filter("cod").sortBy("distancia").map(stop =>
-        Object.assign(stop, {
-          servicios: _.sortBy(stop["servicios"], "cod"),
-        })
-      );
+      const stops = _(tour["paradas"])
+        .filter("cod")
+        .sortBy("distancia")
+        .map(stop =>
+          Object.assign(stop, {
+            servicios: _.sortBy(stop["servicios"], "cod"),
+          })
+        );
 
       const pages = stops.chunk(config.get("PAGINATION:SIZE")).value(); // paginate
 

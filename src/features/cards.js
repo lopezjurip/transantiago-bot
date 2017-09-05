@@ -81,7 +81,10 @@ module.exports = function createFeature(bot, options) {
     },
   });
 
-  bot.command("mis_tarjetas").invoke(handleCardStatus).callback(handleCardStatus);
+  bot
+    .command("mis_tarjetas")
+    .invoke(handleCardStatus)
+    .callback(handleCardStatus);
 
   async function handleCardStatus(ctx) {
     await ctx.bot.api.sendChatAction(ctx.meta.chat.id, "typing");

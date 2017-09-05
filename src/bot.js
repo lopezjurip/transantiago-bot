@@ -88,7 +88,10 @@ module.exports = function createBot(options) {
   bot.command("start").invoke(async ctx => {
     const txt = await fs.readFile(COMMANDS_PATH, "utf8");
     // Use String.raw to fix scape problem.
-    ctx.data.commands = txt.replace("_", String.raw`\_`).split("\n").filter(Boolean);
+    ctx.data.commands = txt
+      .replace("_", String.raw`\_`)
+      .split("\n")
+      .filter(Boolean);
     ctx.data.user = ctx.meta.user;
     await ctx.sendMessage("start", { parse_mode: "Markdown" });
   });

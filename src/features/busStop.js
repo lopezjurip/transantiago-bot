@@ -82,17 +82,26 @@ module.exports = function createFeature(bot, options) {
    * Example: /PA692
    * Get buses and their plate and time.
    */
-  bot.command(expresions.stops).invoke(handleBusStop).callback(handleBusStop);
+  bot
+    .command(expresions.stops)
+    .invoke(handleBusStop)
+    .callback(handleBusStop);
 
   /**
    * /(BUS_STOP)_(BUS_TOUR)
    * Example: /PA692_518 /PG13_301C2
    * Get buses and their plate and time.
    */
-  bot.command(expresions.mixed).invoke(handleBusStop).callback(handleBusStop);
+  bot
+    .command(expresions.mixed)
+    .invoke(handleBusStop)
+    .callback(handleBusStop);
 
   async function handleBusStop(ctx) {
-    const [stop, service] = ctx.command.name.trim().split("_").map(strings.toUpperCaseUntilNumberic);
+    const [stop, service] = ctx.command.name
+      .trim()
+      .split("_")
+      .map(strings.toUpperCaseUntilNumberic);
 
     ctx.bot.api.sendChatAction(ctx.meta.chat.id, "find_location"); // Unhandled promise
     const response = await transantiago.getStop(stop, service); // service can be undefined, this case brings all the tours.
@@ -113,7 +122,9 @@ module.exports = function createFeature(bot, options) {
             .map(n => ({
               plate: service[`ppubus${n}`],
               distance: numeral(service[`distanciabus${n}`]),
-              distanceDisplay: numeral(service[`distanciabus${n}`]).divide(1000).format("0.[00]"),
+              distanceDisplay: numeral(service[`distanciabus${n}`])
+                .divide(1000)
+                .format("0.[00]"),
               time: service[`horaprediccionbus${n}`],
             }))
             .sortBy("distance")
