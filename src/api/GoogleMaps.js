@@ -28,7 +28,8 @@ class GoogleMapsAPI {
     };
     const { data } = await this.client.get("geocode/json", { params });
     if (data["status"] === "OVER_QUERY_LIMIT") {
-      console.warn(data["message"]);
+      // eslint-disable-next-line no-console
+      console.warn(data["message"]); // TODO: better error handling
     }
     return data["results"] || [];
   }
@@ -44,7 +45,8 @@ class GoogleMapsAPI {
     };
     const { data } = await this.client.get("geocode/json", { params });
     if (data["status"] === "OVER_QUERY_LIMIT") {
-      console.warn(data["message"]);
+      // eslint-disable-next-line no-console
+      console.warn(data["message"]); // TODO: better error handling
     }
     return data["results"] || [];
   }
